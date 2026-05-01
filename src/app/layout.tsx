@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import FaviconLight from "@/app/favicon.ico";
 import FaviconDark from "@/app/favicon_dark.ico";
+import { Analytics } from "@vercel/analytics/next"
 
 export const metadata: Metadata = {
   title: "MisLíneas",
@@ -56,6 +57,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body suppressHydrationWarning>{children}</body>
+      <Analytics />
     </html>
   );
 }
