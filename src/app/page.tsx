@@ -226,8 +226,10 @@ function transformApiResponse(responses: ProviderResponse[]): DisplayLine[] {
       result.isRegistered &&
       result.possibleProviders &&
       result.possibleProviders.length > 0;
+    const isRegisteredWithoutLinesOrPossible =
+      result.isRegistered && !hasLines && !(result.possibleProviders && result.possibleProviders.length > 0);
 
-    if (!hasLines && !hasPossible) {
+    if (!hasLines && !hasPossible && !isRegisteredWithoutLinesOrPossible) {
       if (result.possibleProviders && result.possibleProviders.length > 0) {
         for (const posible of result.possibleProviders) {
           lines.push({
@@ -264,11 +266,20 @@ function transformApiResponse(responses: ProviderResponse[]): DisplayLine[] {
     }
 
     if (result.isRegistered) {
-      for (const posible of result.possibleProviders ?? []) {
+      if (result.possibleProviders && result.possibleProviders.length > 0) {
+        for (const posible of result.possibleProviders) {
+          lines.push({
+            id: `${provider}-possible-${posible}`,
+            operadora: posible,
+            numero: "Número no confirmado",
+            isPossible: true,
+          });
+        }
+      } else if (!hasLines) {
         lines.push({
-          id: `${provider}-possible-${posible}`,
-          operadora: posible,
-          numero: "Número no confirmado",
+          id: `${provider}-hidden`,
+          operadora: result.company || provider,
+          numero: "Número oculto",
           isPossible: true,
         });
       }
