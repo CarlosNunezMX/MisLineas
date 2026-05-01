@@ -187,6 +187,7 @@ interface ProviderResult {
   lines: string[];
   isRegistered?: boolean;
   possibleProviders?: string[];
+  notFoundProviders?: string[];
   error?: string;
 }
 
@@ -249,7 +250,7 @@ function transformApiResponse(responses: ProviderResponse[]): DisplayLine[] {
 
     for (const lineStr of result.lines ?? []) {
       const colonIdx = lineStr.indexOf(": ");
-      const isAltanMVNO = result.company === "Altan MVNO" && colonIdx !== -1;
+      const isAltanMVNO = result.company === "Red Altan (MVNOs)" && colonIdx !== -1;
       const operadora = isAltanMVNO
         ? lineStr.slice(0, colonIdx)
         : result.company;
@@ -271,6 +272,15 @@ function transformApiResponse(responses: ProviderResponse[]): DisplayLine[] {
           isPossible: true,
         });
       }
+    }
+
+    for (const notFound of result.notFoundProviders ?? []) {
+      lines.push({
+        id: `${provider}-notfound-${notFound}`,
+        operadora: notFound,
+        numero: "Sin registro",
+        isNotFound: true,
+      });
     }
   }
 

@@ -253,11 +253,32 @@ export async function lookupCURPInAltanMVNO(curp: string): Promise<LineResult> {
     }
   }
 
+  const isRegistered = lines.length > 0;
+
+  if (!isRegistered) {
+    return {
+      company: "Red Altan (MVNOs)",
+      possibleProviders: ALTAN_MVNO_PROVIDERS,
+      lines,
+      isRegistered: false,
+    };
+  }
+
+  const foundProviders = lines.map((l) =>
+    l.slice(0, l.indexOf(": ")).toLowerCase(),
+  );
+  const notFoundProviders = ALTAN_MVNO_PROVIDERS.filter(
+    (p) =>
+      !foundProviders.some(
+        (f) => p.toLowerCase().includes(f) || f.includes(p.toLowerCase()),
+      ),
+  );
+
   return {
     company: "Red Altan (MVNOs)",
-    possibleProviders: ALTAN_MVNO_PROVIDERS,
     lines,
-    isRegistered: lines.length > 0,
-    rawApiResponse: lines.length > 0 ? validationData : undefined,
+    isRegistered: true,
+    notFoundProviders,
+    rawApiResponse: validationData,
   };
 }
