@@ -1,11 +1,36 @@
+import type { Metadata } from "next";
+import "./globals.css";
+import FaviconLight from "@/app/favicon.ico";
+import FaviconDark from "@/app/favicon_dark.ico";
+
+export const metadata: Metadata = {
+  title: "MisLíneas",
+  description:
+    "Consulta las líneas telefónicas vinculadas a tu CURP en las principales operadoras de México.",
+  icons: [
+    {
+      rel: "icon",
+      media: "(prefers-color-scheme: light)",
+      type: "image/ico",
+      url: FaviconLight.src,
+    },
+    {
+      rel: "icon",
+      media: "(prefers-color-scheme: dark)",
+      type: "image/ico",
+      url: FaviconDark.src,
+    },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="es">
+      <body suppressHydrationWarning>{children}</body>
     </html>
-  )
+  );
 }

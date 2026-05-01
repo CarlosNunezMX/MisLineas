@@ -46,8 +46,6 @@ export async function lookupCURPInTelcel(curp: string): Promise<LineResult> {
 
     const validationData = await validationResponse.json();
 
-    console.log(validationData);
-
     if (validationData.errorList && validationData.errorList.length > 0) {
       return {
         company: "Telcel",

@@ -81,7 +81,8 @@ export async function lookupCURPInAltanMVNO(curp: string): Promise<LineResult> {
           accept: "*/*",
           "accept-language": "en-US,en;q=0.6",
           priority: "u=1, i",
-          "sec-ch-ua": '"Brave";v="147", "Not.A/Brand";v="8", "Chromium";v="147"',
+          "sec-ch-ua":
+            '"Brave";v="147", "Not.A/Brand";v="8", "Chromium";v="147"',
           "sec-ch-ua-mobile": "?0",
           "sec-ch-ua-platform": '"Linux"',
           "sec-fetch-dest": "empty",
@@ -94,7 +95,11 @@ export async function lookupCURPInAltanMVNO(curp: string): Promise<LineResult> {
     );
 
     if (!challengeResponse.ok) {
-      return { company: "Altan MVNO", lines: [], error: "Failed to get CAPTCHA challenge" };
+      return {
+        company: "Red Altan (MVNOs)",
+        lines: [],
+        error: "Failed to get CAPTCHA challenge",
+      };
     }
 
     const challengeData = await challengeResponse.json();
@@ -109,7 +114,8 @@ export async function lookupCURPInAltanMVNO(curp: string): Promise<LineResult> {
           "accept-language": "en-US,en;q=0.6",
           "content-type": "application/json",
           priority: "u=1, i",
-          "sec-ch-ua": '"Brave";v="147", "Not.A/Brand";v="8", "Chromium";v="147"',
+          "sec-ch-ua":
+            '"Brave";v="147", "Not.A/Brand";v="8", "Chromium";v="147"',
           "sec-ch-ua-mobile": "?0",
           "sec-ch-ua-platform": '"Linux"',
           "sec-fetch-dest": "empty",
@@ -123,13 +129,21 @@ export async function lookupCURPInAltanMVNO(curp: string): Promise<LineResult> {
     );
 
     if (!redeemResponse.ok) {
-      return { company: "Altan MVNO", lines: [], error: "Failed to redeem CAPTCHA" };
+      return {
+        company: "Red Altan (MVNOs)",
+        lines: [],
+        error: "Failed to redeem CAPTCHA",
+      };
     }
 
     const redeemData = await redeemResponse.json();
 
     if (!redeemData.success) {
-      return { company: "Altan MVNO", lines: [], error: "CAPTCHA not solved correctly" };
+      return {
+        company: "Red Altan (MVNOs)",
+        lines: [],
+        error: "CAPTCHA not solved correctly",
+      };
     }
 
     const sessionID = crypto.randomUUID();
@@ -178,7 +192,8 @@ export async function lookupCURPInAltanMVNO(curp: string): Promise<LineResult> {
 
     const validationResponse = await fetch(url, {
       headers: {
-        accept: "application/x-tss-framed, application/x-ndjson, application/json",
+        accept:
+          "application/x-tss-framed, application/x-ndjson, application/json",
         "accept-language": "en-US,en;q=0.6",
         priority: "u=1, i",
         "sec-ch-ua": '"Brave";v="147", "Not.A/Brand";v="8", "Chromium";v="147"',
@@ -195,31 +210,62 @@ export async function lookupCURPInAltanMVNO(curp: string): Promise<LineResult> {
     });
 
     if (!validationResponse.ok) {
-      return { company: "Altan MVNO", lines: [], error: "Failed to validate CURP" };
+      return {
+        company: "Red Altan (MVNOs)",
+        lines: [],
+        error: "Failed to validate CURP",
+      };
     }
 
     const validationData = await validationResponse.json();
 
     const resultObj = validationData?.p?.v?.[0];
     const keys: string[] = resultObj?.p?.k ?? [];
-    const vals: { t: number; s: unknown; a?: unknown[] }[] = resultObj?.p?.v ?? [];
+    const vals: {
+      t: number;
+      s: unknown;
+      a?: unknown[];
+      p?: { k: string[]; v: { t: number; s: unknown; a?: unknown[] }[] };
+    }[] = resultObj?.p?.v ?? [];
 
-    const total = (vals[keys.indexOf("total")]?.s as number) ?? 0;
-    const groupsRaw = vals[keys.indexOf("groups")]?.a ?? [];
+    const groupsRaw = (vals[keys.indexOf("groups")]?.a ?? []) as {
+      p: {
+        k: string[];
+        v: {
+          t: number;
+          s: unknown;
+          a?: { p: { k: string[]; v: { t: number; s: unknown }[] } }[];
+        }[];
+      };
+    }[];
 
-    // TODO: parse groupsRaw when structure is known — may contain exact operator names
-    if (groupsRaw.length > 0) {
-      console.log("[altanredes-mvno] groups raw:", JSON.stringify(groupsRaw, null, 2));
+    const lines: string[] = [];
+
+    for (const group of groupsRaw) {
+      const gk = group.p.k;
+      const gv = group.p.v;
+      const omvName = gv[gk.indexOf("omvName")]?.s as string;
+      const linesArr = gv[gk.indexOf("lines")]?.a ?? [];
+
+      for (const line of linesArr) {
+        const lk = line.p.k;
+        const lv = line.p.v;
+        const maskedMsisdn = lv[lk.indexOf("maskedMsisdn")]?.s as string;
+        lines.push(`${omvName}: ${maskedMsisdn}`);
+      }
     }
 
     return {
-      company: "Altan MVNO",
-      lines: total > 0 ? [curp] : [],
-      isRegistered: total > 0,
-      possibleProviders: total > 0 ? ALTAN_MVNO_PROVIDERS : undefined,
+      company: "Red Altan (MVNOs)",
+      lines,
+      isRegistered: lines.length > 0,
     };
   } catch (error) {
     console.error("Failed to validate CURP with Altan MVNO:", error);
-    return { company: "Altan MVNO", lines: [], error: "Failed to validate CURP with Altan MVNO" };
+    return {
+      company: "Red Altan (MVNOs)",
+      lines: [],
+      error: "Failed to validate CURP with Altan MVNO",
+    };
   }
 }
