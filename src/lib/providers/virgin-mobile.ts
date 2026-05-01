@@ -42,6 +42,7 @@ export async function loookupCURPInVirginMobile(
     };
   }
 
+  console.log("[virgin-mobile] registered response:", JSON.stringify(validationData, null, 2));
   return {
     company: "Virgin Mobile",
     lines: [],

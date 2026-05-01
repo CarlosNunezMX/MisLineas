@@ -56,6 +56,7 @@ export async function lookupCURPINNextorMovil(
   const validationData = await validationResponse.json();
 
   if (validationData.encontrado) {
+    console.log("[nextor-movil] registered response:", JSON.stringify(validationData, null, 2));
     return {
       company: "Nextor Movil",
       lines: [],

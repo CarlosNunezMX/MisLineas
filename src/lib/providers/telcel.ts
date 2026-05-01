@@ -53,6 +53,7 @@ export async function lookupCURPInTelcel(curp: string): Promise<LineResult> {
     };
   }
 
+  console.log("[telcel] registered response:", JSON.stringify(validationData, null, 2));
   return {
     company: "Telcel",
     lines: [],

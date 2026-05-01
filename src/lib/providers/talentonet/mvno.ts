@@ -37,6 +37,7 @@ export async function loookupCURPInTalentoNetMVNO(
   }
 
   const positiveData = await validationResponse.json().catch(() => null);
+  console.log("[talentonet] registered response:", JSON.stringify(positiveData, null, 2));
   return {
     company: "Newww",
     lines: [],

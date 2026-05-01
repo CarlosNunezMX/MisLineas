@@ -52,7 +52,7 @@ export async function lookupCURPInIENTC(curp: string): Promise<LineResult> {
     } else {
       console.error(
         "Unexpected error validating CURP with IENTC:",
-        validationData,
+        JSON.stringify(validationData, null, 2),
       );
 
       return {
@@ -77,6 +77,7 @@ export async function lookupCURPInIENTC(curp: string): Promise<LineResult> {
   }
 
   const positiveData = await validationResponse.json().catch(() => null);
+  console.log("[ientc] registered response:", JSON.stringify(positiveData, null, 2));
   return {
     company: "IENTC",
     lines: [],

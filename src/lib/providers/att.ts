@@ -90,10 +90,15 @@ export async function lookupCURPInATT(curp: string): Promise<LineResult> {
 
   const validationData = await validationResponse.json();
 
-  if (validationData.status !== "COMPLETED") {
+  const isSuccess =
+    validationData.status === "COMPLETED" ||
+    validationData.status === "SUCCESS" ||
+    validationData.data?.resultCode === "00";
+
+  if (!isSuccess) {
     console.error(
       "AT&T customer validation returned non-completed status:",
-      validationData,
+      JSON.stringify(validationData, null, 2),
     );
 
     return {
@@ -103,9 +108,15 @@ export async function lookupCURPInATT(curp: string): Promise<LineResult> {
     };
   }
 
+  console.log(
+    "AT&T customer validation response:",
+    JSON.stringify(validationData, null, 2),
+  );
+
   const data = validationData.data;
 
   if (data.countLines > 0) {
+    console.log("[att] registered response:", JSON.stringify(validationData, null, 2));
     return {
       company: "AT&T",
       lines: [],

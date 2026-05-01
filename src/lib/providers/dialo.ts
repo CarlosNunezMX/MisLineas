@@ -39,6 +39,7 @@ export async function lookupCURPInDialo(curp: string): Promise<LineResult> {
   const validationData = await validationResponse.json();
 
   if (validationData.body.data[0].total > 0) {
+    console.log("[dialo] registered response:", JSON.stringify(validationData, null, 2));
     return {
       company: "Dialo",
       lines: [],

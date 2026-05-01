@@ -31,6 +31,7 @@ export async function lookupCURPInMegamovil(curp: string): Promise<LineResult> {
     };
   }
 
+  console.log("[megamovil] registered response:", JSON.stringify(validationData, null, 2));
   return {
     company: "Megamovil",
     lines: [],

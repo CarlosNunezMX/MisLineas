@@ -28,6 +28,7 @@ export async function lookupCURPINYoMobile(curp: string): Promise<LineResult> {
     };
   }
 
+  console.log("[yo-mobile] registered response:", JSON.stringify(validationData, null, 2));
   return {
     company: "Yo Mobile",
     lines: [],

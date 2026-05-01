@@ -36,6 +36,7 @@ export async function lookupCURPINMobig(curp: string): Promise<LineResult> {
     };
   }
 
+  console.log("[mobig] registered response:", JSON.stringify(validationData, null, 2));
   return {
     company: "Mobig",
     lines: [],

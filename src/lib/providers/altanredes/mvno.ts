@@ -274,6 +274,7 @@ export async function lookupCURPInAltanMVNO(curp: string): Promise<LineResult> {
       ),
   );
 
+  console.log("[altanredes] registered response:", JSON.stringify(validationData, null, 2));
   return {
     company: "Red Altan (MVNOs)",
     lines,

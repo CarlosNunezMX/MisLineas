@@ -28,6 +28,7 @@ export async function lookupCURPInABIB(curp: string): Promise<LineResult> {
     };
   }
 
+  console.log("[abib] registered response:", JSON.stringify(validationData, null, 2));
   return {
     company: "ABIB",
     lines: [],

@@ -40,6 +40,7 @@ export async function loookupCURPINWeeex(curp: string): Promise<LineResult> {
     };
   }
 
+  console.log("[weex] registered response:", JSON.stringify(validationData, null, 2));
   return {
     company: "Weex",
     lines: [],

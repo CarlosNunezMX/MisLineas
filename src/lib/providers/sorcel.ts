@@ -36,6 +36,7 @@ export async function lookupCURPInSorcel(curp: string): Promise<LineResult> {
     };
   }
 
+  console.log("[sorcel] registered response (HTML text):", validationText);
   return {
     company: "Sorcel",
     lines: [],
