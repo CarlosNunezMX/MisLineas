@@ -280,7 +280,7 @@ function transformApiResponse(responses: ProviderResponse[]): DisplayLine[] {
           id: `${provider}-hidden`,
           operadora: result.company || provider,
           numero: "Número oculto",
-          isPossible: true,
+          isPossible: false,
         });
       }
     }
