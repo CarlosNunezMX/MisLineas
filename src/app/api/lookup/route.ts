@@ -25,8 +25,6 @@ const providers: Array<{
   },
 ];
 
-export const runtime = "edge";
-
 export async function POST(req: NextRequest) {
   const { curp } = await req.json();
 
