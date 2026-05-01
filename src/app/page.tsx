@@ -151,9 +151,7 @@ function getProviderWebsite(operadora: string): string | null {
   return key ? PROVIDER_WEBSITES[key] : null;
 }
 
-// ---------------------------------------------------------------------------
 // CURP real-time validation
-// ---------------------------------------------------------------------------
 const CURP_REGEX = /^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/;
 
 function getCurpValidationError(curp: string): string | null {
