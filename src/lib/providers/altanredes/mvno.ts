@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 import type { LineResult } from "@/types";
 import { solveCapChallenge } from "./solver";
 
