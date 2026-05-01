@@ -7,6 +7,31 @@ export const metadata: Metadata = {
   title: "MisLíneas",
   description:
     "Consulta las líneas telefónicas vinculadas a tu CURP en las principales operadoras de México.",
+  keywords: [
+    "MisLíneas",
+    "CURP",
+    "Líneas telefónicas",
+    "Telcel",
+    "AT&T",
+    "Altan Redes",
+    "México",
+    "Operadoras",
+  ],
+  openGraph: {
+    title: "MisLíneas | Consulta tus líneas telefónicas",
+    description:
+      "Consulta las líneas telefónicas vinculadas a tu CURP en las principales operadoras de México.",
+    url: "https://mislineas.moraxh.dev",
+    siteName: "MisLíneas",
+    locale: "es_MX",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MisLíneas | Consulta tus líneas telefónicas",
+    description:
+      "Consulta las líneas telefónicas vinculadas a tu CURP en las principales operadoras de México.",
+  },
   icons: [
     {
       rel: "icon",
