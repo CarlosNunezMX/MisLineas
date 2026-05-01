@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 import FaviconLight from "@/app/favicon.ico";
 import FaviconDark from "@/app/favicon_dark.ico";
-import { Analytics } from "@vercel/analytics/next"
 
 export const metadata: Metadata = {
   title: "MisLíneas",

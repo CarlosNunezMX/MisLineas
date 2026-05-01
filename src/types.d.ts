@@ -4,4 +4,5 @@ export type LineResult = {
   isRegistered?: boolean;
   possibleProviders?: string[];
   error?: string;
+  rawApiResponse?: unknown;
 };

@@ -6,6 +6,7 @@ import {
   Building2,
   Check,
   CheckCircle2,
+  ClipboardPaste,
   Copy,
   ExternalLink,
   Eye,
@@ -17,6 +18,7 @@ import {
   Phone,
   RotateCcw,
   Scale,
+  Search,
   Server,
   ShieldAlert,
   ShieldCheck,
@@ -29,7 +31,7 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import type React from "react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import logo from "@/assets/logo.png";
 import { cn } from "@/lib/utils";
 
@@ -175,7 +177,9 @@ interface DisplayLine {
   id: string;
   operadora: string;
   numero: string;
-  isPossible: boolean;
+  isPossible?: boolean;
+  isNotFound?: boolean;
+  isError?: boolean;
 }
 
 interface ProviderResult {
@@ -195,13 +199,53 @@ function transformApiResponse(responses: ProviderResponse[]): DisplayLine[] {
   const lines: DisplayLine[] = [];
 
   for (const { provider, result } of responses) {
-    if (result.error) continue;
-    if (
-      !result.isRegistered &&
-      (!result.lines || result.lines.length === 0) &&
-      (!result.possibleProviders || result.possibleProviders.length === 0)
-    )
+    if (result.error) {
+      if (result.possibleProviders && result.possibleProviders.length > 0) {
+        for (const posible of result.possibleProviders) {
+          lines.push({
+            id: `${provider}-error-${posible}`,
+            operadora: posible,
+            numero: "Error al consultar",
+            isError: true,
+          });
+        }
+      } else {
+        lines.push({
+          id: `${provider}-error`,
+          operadora: provider,
+          numero: "Error al consultar",
+          isError: true,
+        });
+      }
       continue;
+    }
+
+    const hasLines = result.lines && result.lines.length > 0;
+    const hasPossible =
+      result.isRegistered &&
+      result.possibleProviders &&
+      result.possibleProviders.length > 0;
+
+    if (!hasLines && !hasPossible) {
+      if (result.possibleProviders && result.possibleProviders.length > 0) {
+        for (const posible of result.possibleProviders) {
+          lines.push({
+            id: `${provider}-notfound-${posible}`,
+            operadora: posible,
+            numero: "Sin registro",
+            isNotFound: true,
+          });
+        }
+      } else {
+        lines.push({
+          id: `${provider}-notfound`,
+          operadora: provider,
+          numero: "Sin registro",
+          isNotFound: true,
+        });
+      }
+      continue;
+    }
 
     for (const lineStr of result.lines ?? []) {
       const colonIdx = lineStr.indexOf(": ");
@@ -218,15 +262,25 @@ function transformApiResponse(responses: ProviderResponse[]): DisplayLine[] {
       });
     }
 
-    for (const posible of result.possibleProviders ?? []) {
-      lines.push({
-        id: `${provider}-possible-${posible}`,
-        operadora: posible,
-        numero: "Número no confirmado",
-        isPossible: true,
-      });
+    if (result.isRegistered) {
+      for (const posible of result.possibleProviders ?? []) {
+        lines.push({
+          id: `${provider}-possible-${posible}`,
+          operadora: posible,
+          numero: "Número no confirmado",
+          isPossible: true,
+        });
+      }
     }
   }
+
+  // Sort: confirmed lines first, then possible, then not found, then errors
+  lines.sort((a, b) => {
+    const aScore = a.isError ? 3 : a.isNotFound ? 2 : a.isPossible ? 1 : 0;
+    const bScore = b.isError ? 3 : b.isNotFound ? 2 : b.isPossible ? 1 : 0;
+    if (aScore !== bScore) return aScore - bScore;
+    return a.operadora.localeCompare(b.operadora);
+  });
 
   return lines;
 }
@@ -236,8 +290,12 @@ function getRiskLevel(lines: DisplayLine[]): {
   color: string;
   description: string;
 } {
-  const confirmed = lines.filter((l) => !l.isPossible).length;
-  const possible = lines.filter((l) => l.isPossible).length;
+  const confirmed = lines.filter(
+    (l) => !l.isPossible && !l.isNotFound && !l.isError,
+  ).length;
+  const possible = lines.filter(
+    (l) => l.isPossible && !l.isNotFound && !l.isError,
+  ).length;
   if (confirmed === 0 && possible === 0)
     return {
       label: "Sin Registro",
@@ -260,7 +318,7 @@ function getRiskLevel(lines: DisplayLine[]): {
 const KNOWN_PROVIDERS = [
   { name: "Telcel", icon: Signal },
   { name: "AT&T", icon: Wifi },
-  { name: "+70 MVNOs (Red Altan)", icon: Building2 },
+  { name: "+80 MVNOs (Red Altan)", icon: Building2 },
 ];
 
 const WHY_CARDS = [
@@ -326,34 +384,77 @@ export default function MisLineas() {
   const [timedOut, setTimedOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<DisplayLine[] | null>(null);
-  const [rawResponses, setRawResponses] = useState<ProviderResponse[] | null>(
-    null,
-  );
+  const [, setRawResponses] = useState<ProviderResponse[] | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [queryTime, setQueryTime] = useState<Date | null>(null);
+  const [history, setHistory] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    try {
+      const storedHistory = localStorage.getItem("curp_history");
+      if (storedHistory) {
+        setHistory(JSON.parse(storedHistory));
+      }
+    } catch {}
+  }, []);
+
+  const saveToHistory = (newCurp: string) => {
+    setHistory((prev) => {
+      const updated = [newCurp, ...prev.filter((c) => c !== newCurp)].slice(
+        0,
+        5,
+      );
+      try {
+        localStorage.setItem("curp_history", JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
 
   const curpValidationError = getCurpValidationError(curp);
   const curpIsValid = curp.length === 18 && !curpValidationError;
 
+  const handlePasteCurp = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const sanitized = text
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, "")
+        .slice(0, 18);
+      if (sanitized) {
+        setCurp(sanitized);
+      }
+    } catch {
+      // Ignore if clipboard access fails or is denied
+    }
+  };
+
   const handleConsultar = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!curpIsValid) return;
+
     setError(null);
-    setResults(null);
-    setRawResponses(null);
+    setResults([]); // Array vacío para inicio de stream
+    setRawResponses([]);
+    setSearchQuery("");
     setTimedOut(false);
     setLoading(true);
+    setQueryTime(null);
 
     const controller = new AbortController();
     abortRef.current = controller;
 
+    // Ampliamos el timeout global porque el streaming toma su tiempo dependiendo de la API más lenta
     const timeoutId = setTimeout(() => {
       controller.abort();
       setTimedOut(true);
       setLoading(false);
-    }, QUERY_TIMEOUT_MS);
+    }, QUERY_TIMEOUT_MS * 2);
 
     try {
+      saveToHistory(curp);
       const response = await fetch("/api/lookup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -361,17 +462,42 @@ export default function MisLineas() {
         signal: controller.signal,
       });
 
-      clearTimeout(timeoutId);
+      if (!response.body) throw new Error("No body in response");
 
-      const data = await response.json();
-      if (!response.ok)
-        throw new Error(data.error || "Error en el servidor central.");
-
-      const providerResponses = data as ProviderResponse[];
-      setRawResponses(providerResponses);
-      const transformed = transformApiResponse(providerResponses);
-      setResults(transformed);
       setQueryTime(new Date());
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      const accumulatedResponses: ProviderResponse[] = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n");
+        // El último elemento podría estar incompleto, así que lo guardamos en el buffer
+        buffer = parts.pop() || "";
+
+        for (const line of parts) {
+          if (!line.trim()) continue;
+          try {
+            const parsed = JSON.parse(line) as ProviderResponse;
+            accumulatedResponses.push(parsed);
+          } catch (e) {
+            console.error("Error parsing NDJSON chunk", line, e);
+          }
+        }
+
+        // Actualizamos estado en tiempo real
+        setRawResponses([...accumulatedResponses]);
+        setResults(transformApiResponse([...accumulatedResponses]));
+      }
+
+      clearTimeout(timeoutId);
     } catch (err: unknown) {
       clearTimeout(timeoutId);
       if ((err as Error)?.name === "AbortError") return;
@@ -395,39 +521,56 @@ export default function MisLineas() {
     setRawResponses(null);
     setQueryTime(null);
     setCurp("");
+    setSearchQuery("");
     setError(null);
     setTimedOut(false);
   };
 
   const riskLevel = results ? getRiskLevel(results) : null;
-  const hasNoLines = results !== null && results.length === 0;
+  const detectedCount = results
+    ? results.filter((l) => !l.isNotFound && !l.isError).length
+    : 0;
+
+  const filteredResults = results
+    ? results.filter((l) => {
+        if (!searchQuery) return true;
+        const q = searchQuery.toLowerCase();
+        return (
+          l.operadora.toLowerCase().includes(q) ||
+          l.numero.toLowerCase().includes(q)
+        );
+      })
+    : [];
+  // hasNoLines is no longer needed since we want to show what was searched even if 0 lines found
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-[#1a1a1a] selection:bg-slate-900 selection:text-white font-sans">
+    <div className="min-h-screen bg-zinc-50 text-zinc-900 selection:bg-zinc-900 selection:text-white font-sans">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
-        <div className="max-w-300 mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-zinc-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 group cursor-pointer">
             <Image
               src={logo}
               alt="MisLíneas"
-              width={32}
-              height={32}
-              className="rounded-lg transition-transform group-hover:rotate-6"
+              width={28}
+              height={28}
+              className="rounded-md transition-transform group-hover:scale-105"
             />
-            <span className="font-bold text-lg tracking-tight">MisLíneas</span>
+            <span className="font-semibold text-lg tracking-tight">
+              MisLíneas
+            </span>
           </div>
 
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-6">
             <a
               href="#seguridad"
-              className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+              className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors"
             >
               Seguridad
             </a>
             <a
               href="#arco"
-              className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+              className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors"
             >
               Derechos ARCO
             </a>
@@ -435,7 +578,7 @@ export default function MisLineas() {
               href="https://portal.crt.gob.mx/reporte-fallas-plataforma-registro"
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-800 hover:shadow-lg hover:shadow-slate-200 transition-all active:scale-95 flex items-center gap-2"
+              className="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-zinc-800 transition-all flex items-center gap-2"
             >
               <ShieldAlert className="w-4 h-4" />
               Reportar Fraude
@@ -444,9 +587,8 @@ export default function MisLineas() {
 
           <button
             type="button"
-            className="md:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors"
+            className="md:hidden p-2 text-zinc-600 hover:bg-zinc-100 rounded-md transition-colors"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label={isMenuOpen ? "Cerrar menú" : "Abrir menú"}
           >
             {isMenuOpen ? (
               <X className="w-5 h-5" />
@@ -464,76 +606,68 @@ export default function MisLineas() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-white border-b border-slate-100 px-6 py-8 space-y-6 overflow-hidden z-40 relative"
+            className="md:hidden bg-white border-b border-zinc-200 px-4 py-6 space-y-4 overflow-hidden z-40 relative"
           >
-            <div className="flex flex-col gap-6">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  window.location.hash = "seguridad";
-                }}
-                className="text-lg font-semibold text-slate-700 text-left"
-              >
-                Seguridad
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  window.location.hash = "arco";
-                }}
-                className="text-lg font-semibold text-slate-700 text-left"
-              >
-                Derechos ARCO
-              </button>
-              <a
-                href="https://portal.crt.gob.mx/reporte-fallas-plataforma-registro"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setIsMenuOpen(false)}
-                className="bg-slate-900 text-white w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2"
-              >
-                <ShieldAlert className="w-5 h-5" />
-                Reportar Fraude
-              </a>
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setIsMenuOpen(false);
+                window.location.hash = "seguridad";
+              }}
+              className="block w-full text-left font-medium text-zinc-700"
+            >
+              Seguridad
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsMenuOpen(false);
+                window.location.hash = "arco";
+              }}
+              className="block w-full text-left font-medium text-zinc-700"
+            >
+              Derechos ARCO
+            </button>
+            <a
+              href="https://portal.crt.gob.mx/reporte-fallas-plataforma-registro"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setIsMenuOpen(false)}
+              className="bg-black text-white w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2"
+            >
+              <ShieldAlert className="w-4 h-4" />
+              Reportar Fraude
+            </a>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <main className="max-w-300 mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        {/* Hero + Form */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-12 md:py-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
           {/* Left Column */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="lg:col-span-5 space-y-6 sm:space-y-8"
-          >
-            <div>
-              <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.1] mb-5">
+          <div className="lg:col-span-5 space-y-8">
+            <div className="space-y-4">
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-zinc-900 leading-tight">
                 El control de tu{" "}
-                <span className="text-slate-400">identidad móvil</span> en un
-                solo lugar.
+                <span className="text-zinc-500">identidad móvil</span>{" "}
+                centralizado.
               </h1>
-              <p className="text-slate-600 text-base sm:text-lg leading-relaxed font-medium">
+              <p className="text-zinc-600 leading-relaxed">
                 Debido a la nueva regulación federal, es tu derecho y obligación
-                conocer qué números están vinculados a tu nombre. Evita el robo
-                de identidad y cargos no reconocidos.
+                conocer qué números están vinculados a tu nombre. Evita cargos o
+                suplantación de identidad.
               </p>
             </div>
 
-            {/* Form Card */}
-            <div className="bg-white border border-slate-200 rounded-4xl p-6 sm:p-8 shadow-2xl shadow-slate-100/60 ring-1 ring-slate-100">
+            {/* Form */}
+            <div className="bg-white border border-zinc-200 shadow-sm rounded-2xl p-6">
               <form onSubmit={handleConsultar} className="space-y-5">
                 <div className="space-y-2">
                   <label
                     htmlFor="curp-input"
-                    className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1"
+                    className="text-sm font-medium text-zinc-700"
                   >
-                    Ingresa tu CURP (18 caracteres)
+                    Ingresa tu CURP
                   </label>
                   <div className="relative">
                     <input
@@ -541,19 +675,13 @@ export default function MisLineas() {
                       id="curp-input"
                       autoComplete="off"
                       autoCapitalize="characters"
-                      inputMode="text"
                       placeholder="Ej. XXXX000000XXXXXX00"
-                      aria-label="CURP — Clave Única de Registro de Población, 18 caracteres"
-                      aria-describedby={
-                        curpValidationError ? "curp-error" : undefined
-                      }
-                      aria-invalid={curpValidationError ? "true" : undefined}
                       className={cn(
-                        "w-full bg-slate-50 border-2 border-slate-100 px-5 py-4 sm:px-6 sm:py-5 rounded-2xl text-lg sm:text-xl outline-none transition-all duration-300",
-                        "focus:border-slate-900 focus:bg-white focus:ring-8 focus:ring-slate-50",
-                        "font-mono tracking-widest text-slate-900",
+                        "w-full bg-zinc-50 border border-zinc-200 px-4 py-3 rounded-xl text-base outline-none transition-all placeholder:text-zinc-400",
+                        "focus:border-black focus:ring-1 focus:ring-black",
+                        "font-mono uppercase",
                         curpValidationError
-                          ? "border-red-200 focus:border-red-300 focus:ring-red-50"
+                          ? "border-red-300 focus:border-red-500 focus:ring-red-500 bg-red-50"
                           : "",
                       )}
                       value={curp}
@@ -568,396 +696,287 @@ export default function MisLineas() {
                       maxLength={18}
                       disabled={loading}
                     />
-                    {curp.length > 0 && curp.length < 18 && (
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                        {curp.length}/18
-                      </span>
-                    )}
-                    {curpIsValid && (
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2">
-                        <CheckCircle2
-                          className="w-5 h-5 text-emerald-500"
-                          aria-hidden="true"
-                        />
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Inline CURP validation error */}
-                  <AnimatePresence>
-                    {curpValidationError && (
-                      <motion.p
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="text-xs text-red-600 font-medium ml-1 overflow-hidden"
-                        role="alert"
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                      {curpIsValid && (
+                        <span className="px-1">
+                          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handlePasteCurp}
+                        className="p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200/50 rounded-lg transition-colors"
+                        title="Pegar desde el portapapeles"
                       >
-                        {curpValidationError}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
-
-                  {/* CURP lookup link */}
-                  <p className="text-[11px] text-slate-400 font-medium ml-1">
-                    ¿No recuerdas tu CURP?{" "}
-                    <a
-                      href="https://www.gob.mx/curp"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-slate-600 underline underline-offset-2 hover:text-slate-900 transition-colors font-bold"
-                    >
-                      Consúltala en gob.mx
-                    </a>
-                  </p>
+                        <ClipboardPaste className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  {curpValidationError && (
+                    <p className="text-xs text-red-600 font-medium">
+                      {curpValidationError}
+                    </p>
+                  )}
+                  <div className="flex items-center justify-between text-xs">
+                    <p className="text-zinc-500">
+                      ¿No recuerdas tu CURP?{" "}
+                      <a
+                        href="https://www.gob.mx/curp"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline hover:text-zinc-900 transition-colors"
+                      >
+                        Consúltala en gob.mx
+                      </a>
+                    </p>
+                  </div>
                 </div>
+
+                {history.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-zinc-500">
+                      Búsquedas recientes:
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {history.map((h, i) => (
+                        <button
+                          key={h}
+                          type="button"
+                          onClick={() => setCurp(h)}
+                          className="text-xs font-mono px-2.5 py-1 bg-zinc-100/80 text-zinc-600 border border-zinc-200 rounded-lg hover:bg-zinc-200 hover:text-zinc-900 transition-colors"
+                        >
+                          {h}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <button
                   type="submit"
                   disabled={loading || !curpIsValid}
-                  aria-disabled={loading || !curpIsValid}
-                  aria-label={
-                    !curpIsValid
-                      ? "Ingresa un CURP válido de 18 caracteres para continuar"
-                      : "Realizar consulta unificada"
-                  }
-                  className={cn(
-                    "w-full py-4 sm:py-5 rounded-2xl font-bold text-base sm:text-lg transition-all duration-300 flex items-center justify-center gap-3",
-                    "bg-slate-900 text-white hover:bg-slate-800 hover:shadow-xl hover:shadow-slate-200 active:scale-[0.98]",
-                    "disabled:opacity-40 disabled:cursor-not-allowed",
-                  )}
+                  className="w-full py-3.5 bg-black text-white rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-zinc-800 disabled:opacity-50 disabled:hover:bg-black transition-colors"
                 >
                   {loading ? (
-                    <div
-                      className="flex items-center gap-3"
-                      aria-live="polite"
-                      aria-busy="true"
-                    >
-                      <Loader2
-                        className="w-5 h-5 sm:w-6 sm:h-6 animate-spin"
-                        aria-hidden="true"
-                      />
-                      <span>Validando identidad...</span>
-                    </div>
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Validando...</span>
+                    </>
                   ) : (
                     <>
-                      <span>Realizar Consulta Unificada</span>
-                      <ArrowRight className="w-5 h-5" aria-hidden="true" />
+                      <span>Realizar Consulta</span>
+                      <ArrowRight className="w-4 h-4" />
                     </>
                   )}
                 </button>
               </form>
 
-              <AnimatePresence>
-                {(error || timedOut) && (
-                  <motion.div
-                    id="curp-error"
-                    role="alert"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="mt-5 overflow-hidden"
-                  >
-                    <div className="flex items-start gap-3 bg-red-50 text-red-700 p-4 rounded-xl border border-red-100">
-                      <AlertCircle
-                        className="w-5 h-5 shrink-0 mt-0.5"
-                        aria-hidden="true"
-                      />
-                      <div className="flex-1 space-y-2">
-                        <span className="text-sm font-medium leading-relaxed block">
-                          {timedOut
-                            ? "La consulta tardó demasiado. Verifica tu conexión e intenta de nuevo."
-                            : error}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={handleRetry}
-                          className="text-sm font-bold text-red-700 underline underline-offset-2 hover:text-red-900 transition-colors"
-                        >
-                          Intentar de nuevo
-                        </button>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {/* Errors */}
+              {(error || timedOut) && (
+                <div className="mt-4 flex gap-3 text-sm text-red-600 bg-red-50 p-4 rounded-xl border border-red-100">
+                  <AlertCircle className="w-5 h-5 shrink-0" />
+                  <div>
+                    <p>
+                      {timedOut
+                        ? "La consulta excedió el tiempo límite. Intenta de nuevo."
+                        : error}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleRetry}
+                      className="mt-1 font-medium underline"
+                    >
+                      Reintentar
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Identity Protocol Notice */}
-            <div className="p-5 bg-amber-50 border border-amber-100 rounded-2xl">
-              <div className="flex gap-3">
-                <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
-                  <ShieldAlert
-                    className="w-4 h-4 text-amber-700"
-                    aria-hidden="true"
-                  />
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-amber-800 uppercase tracking-widest block mb-1">
-                    Protocolo de Identidad Digital
-                  </span>
-                  <p className="text-xs text-amber-900/70 leading-relaxed">
-                    Plataforma ciudadana independiente. No estamos afiliados al
-                    Gobierno de México. Este servicio automatiza la verificación
-                    de registros públicos para facilitar el ejercicio de tus
-                    derechos digitales.
-                  </p>
-                </div>
+            {/* Notices */}
+            <div className="grid gap-4">
+              <div className="bg-amber-50 text-amber-900 text-sm p-4 rounded-xl border border-amber-100 flex gap-3">
+                <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0" />
+                <p>
+                  <strong>Protocolo de Identidad Digital:</strong> Plataforma
+                  ciudadana sin afiliación al Gobierno. Automatizamos la
+                  verificación pública para facilitar este derecho.
+                </p>
+              </div>
+              <div className="bg-zinc-100 text-zinc-600 text-sm p-4 rounded-xl border border-zinc-200 flex gap-3">
+                <Server className="w-5 h-5 text-zinc-400 shrink-0" />
+                <p>
+                  <strong>Aviso de investigación:</strong> Formatos de respuesta
+                  se documentan (sin datos personales) para mapear APIs públicas
+                  y mejorar nuestra cobertura de código abierto.
+                </p>
               </div>
             </div>
 
-            {/* Authors — visible on desktop left column */}
-            <div className="hidden lg:flex flex-col gap-3">
-              <AuthorCard
-                name="Jorge Mora"
-                github="moraxh"
+            {/* Authors */}
+            <div className="hidden lg:flex items-center gap-1 text-sm text-zinc-400">
+              <span>Hecho por</span>
+              <a
                 href="https://github.com/moraxh"
-                delay={0.2}
-              />
-              <AuthorCard
-                name="Hadassah García"
-                github="HadassahGarcia"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-zinc-700 hover:text-zinc-900 transition-colors underline underline-offset-2 decoration-zinc-300 hover:decoration-zinc-500"
+              >
+                Jorge Mora
+              </a>
+              <span>&amp;</span>
+              <a
                 href="https://github.com/HadassahGarcia"
-                delay={0.3}
-              />
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-zinc-700 hover:text-zinc-900 transition-colors underline underline-offset-2 decoration-zinc-300 hover:decoration-zinc-500"
+              >
+                Hadassah Garcia
+              </a>
             </div>
-          </motion.div>
+          </div>
 
-          {/* Right Column: Dashboard */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }}
-            className="lg:col-span-7"
-          >
+          {/* Right Column */}
+          <div className="lg:col-span-7">
             <AnimatePresence mode="wait">
               {!results && !loading && !timedOut ? (
                 <motion.div
                   key="empty"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="h-full min-h-100 border-2 border-dashed border-slate-200 rounded-[3rem] flex flex-col p-8 sm:p-10"
+                  className="h-full min-h-[400px] border border-dashed border-zinc-300 bg-zinc-50/50 rounded-2xl flex flex-col p-8 justify-center items-center text-center"
                 >
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100">
-                      <History
-                        className="w-5 h-5 text-slate-300"
-                        aria-hidden="true"
-                      />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-slate-800">
-                        Listo para verificar
-                      </h3>
-                      <p className="text-slate-600 text-xs">
-                        Ingresa tu CURP para iniciar el escaneo
-                      </p>
-                    </div>
+                  <div className="w-12 h-12 bg-white rounded-full border border-zinc-200 flex items-center justify-center justify-center mb-4 shadow-sm">
+                    <History className="w-5 h-5 text-zinc-400" />
                   </div>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">
-                    Operadoras consultadas
+                  <h3 className="font-semibold text-zinc-900 text-lg mb-1">
+                    Listo para verificar
+                  </h3>
+                  <p className="text-sm text-zinc-500 mb-6">
+                    Ingresa tu CURP para conocer las líneas a tu nombre.
                   </p>
-                  <div className="space-y-2">
+
+                  <div className="w-full max-w-sm space-y-2 text-left">
+                    <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                      Consultando +80 Proveedores
+                    </p>
                     {KNOWN_PROVIDERS.map((p) => (
                       <div
                         key={p.name}
-                        className="flex items-center justify-between px-4 py-3 bg-slate-50 rounded-2xl border border-slate-100"
+                        className="flex items-center justify-between bg-white px-4 py-2.5 rounded-lg border border-zinc-200 shadow-sm"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center">
-                            <p.icon
-                              className="w-3.5 h-3.5 text-slate-500"
-                              aria-hidden="true"
-                            />
-                          </div>
-                          <span className="text-sm font-semibold text-slate-700">
+                          <p.icon className="w-4 h-4 text-zinc-400" />
+                          <span className="text-sm font-medium text-zinc-700">
                             {p.name}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                            En espera
-                          </span>
-                        </div>
+                        <span className="text-xs text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-md">
+                          En espera
+                        </span>
                       </div>
                     ))}
                   </div>
                 </motion.div>
-              ) : loading ? (
-                <motion.output
-                  key="loading"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  aria-live="polite"
-                  aria-label="Consultando operadoras, por favor espera"
-                  className="h-full min-h-100 bg-slate-50/50 rounded-[3rem] p-8 sm:p-12 flex flex-col items-center justify-center space-y-10"
-                >
-                  <div className="relative">
-                    <div
-                      className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-slate-100 border-t-slate-900 animate-spin"
-                      aria-hidden="true"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Server
-                        className="w-9 h-9 sm:w-10 sm:h-10 text-slate-300"
-                        aria-hidden="true"
-                      />
-                    </div>
-                  </div>
-                  <div className="text-center space-y-3">
-                    <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
-                      Validando identidad
-                    </h3>
-                    <div className="flex flex-col gap-2">
-                      {[
-                        "Consultando Telcel...",
-                        "Verificando AT&T...",
-                        "Escaneando +70 MVNOs (Red Altan)...",
-                      ].map((text) => (
-                        <div
-                          key={text}
-                          className="flex items-center justify-center gap-2 text-xs font-bold text-slate-400 tracking-widest uppercase"
-                        >
-                          <Loader2
-                            className="w-3 h-3 animate-spin"
-                            aria-hidden="true"
-                          />
-                          {text}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </motion.output>
-              ) : hasNoLines ? (
-                <motion.div
-                  key="no-lines"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="h-full min-h-100 border-2 border-dashed border-slate-200 rounded-[3rem] flex flex-col items-center justify-center p-8 sm:p-12 text-center gap-5"
-                >
-                  <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
-                    <ShieldCheck
-                      className="w-8 h-8 text-slate-400"
-                      aria-hidden="true"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-extrabold text-slate-800 mb-2">
-                      Sin líneas detectadas
-                    </h3>
-                    <p className="text-sm text-slate-500 font-medium max-w-xs leading-relaxed">
-                      No se encontraron líneas activas vinculadas a esta CURP en
-                      ninguna de las operadoras consultadas.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleNuevaConsulta}
-                    className="flex items-center gap-2 text-sm font-bold text-slate-600 underline underline-offset-2 hover:text-slate-900 transition-colors"
-                  >
-                    <RotateCcw className="w-4 h-4" aria-hidden="true" />
-                    Nueva consulta
-                  </button>
-                </motion.div>
               ) : results ? (
-                <motion.section
+                <motion.div
                   key="results"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  aria-live="polite"
-                  aria-label="Resultados de la consulta"
-                  className="space-y-5"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-6"
                 >
                   {/* Results Header */}
-                  <div className="bg-slate-900 text-white p-8 sm:p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
-                    <div className="relative z-10 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
-                      <div className="space-y-2">
-                        <span className="block text-[11px] font-bold text-slate-400 uppercase tracking-[0.35em]">
-                          Resumen de Identidad
-                        </span>
-                        <h2 className="text-3xl sm:text-4xl font-black tracking-tight">
-                          {results.length}{" "}
-                          {results.length === 1
-                            ? "Línea Detectada"
-                            : "Líneas Detectadas"}
-                        </h2>
-                        <div className="flex items-center gap-2 text-slate-300 font-mono text-xs font-medium">
-                          <UserCheck
-                            className="w-4 h-4 text-emerald-400"
-                            aria-hidden="true"
-                          />
-                          <span className="truncate max-w-65">
-                            Identidad validada: {curp}
-                          </span>
+                  <div className="bg-white border border-zinc-200 shadow-sm rounded-2xl p-6 sm:p-8">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+                      <div>
+                        <div className="flex items-center gap-3">
+                          <h2 className="text-2xl font-bold text-zinc-900">
+                            {detectedCount}{" "}
+                            {detectedCount === 1
+                              ? "Línea detectada"
+                              : "Líneas detectadas"}
+                          </h2>
+                          {loading && (
+                            <span className="flex items-center justify-center bg-zinc-100 text-zinc-500 rounded-full px-3 py-1 text-xs font-medium gap-1.5 animate-pulse border border-zinc-200">
+                              <Loader2 className="w-3 h-3 animate-spin text-zinc-400" />{" "}
+                              Consultando
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-2 text-zinc-600 text-sm font-mono bg-zinc-50 px-3 py-1.5 rounded-lg border border-zinc-200 w-fit">
+                          <UserCheck className="w-4 h-4" />
+                          <span>{curp}</span>
                         </div>
                       </div>
-                      {/* Nueva consulta button in results header */}
                       <button
                         type="button"
                         onClick={handleNuevaConsulta}
-                        className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white transition-colors shrink-0"
+                        className="text-sm font-medium text-zinc-500 hover:text-black flex items-center gap-1.5 transition-colors"
                       >
-                        <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
-                        Nueva consulta
+                        <RotateCcw className="w-4 h-4" /> Nueva consulta
                       </button>
                     </div>
-                    <div
-                      className="text-[10rem] sm:text-[22rem] font-black text-white/3 absolute -right-4 -bottom-4 translate-y-1/4 select-none leading-none"
-                      aria-hidden="true"
-                    >
-                      MEX
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                    <div className="bg-white border border-slate-200 p-5 sm:p-6 rounded-3xl hover:border-slate-400 transition-colors shadow-sm">
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                          Estatus
-                        </span>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-zinc-50 border border-zinc-200 p-4 rounded-xl flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-zinc-500 font-medium mb-1">
+                            Estatus de riesgo
+                          </p>
+                          <p className="text-base font-bold text-zinc-900">
+                            {riskLevel?.label}
+                          </p>
+                        </div>
                         <div
                           className={cn(
-                            "w-2.5 h-2.5 rounded-full shadow-lg",
-                            riskLevel?.color ?? "bg-slate-400",
+                            "w-3 h-3 rounded-full",
+                            riskLevel?.color,
                           )}
-                          aria-hidden="true"
                         />
                       </div>
-                      <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-                        {riskLevel?.label ?? "Sin Registro"}
-                      </p>
-                      <p className="text-[11px] text-slate-500 mt-1 font-medium leading-tight">
-                        {riskLevel?.description}
-                      </p>
-                    </div>
-                    <div className="bg-white border border-slate-200 p-5 sm:p-6 rounded-3xl hover:border-slate-400 transition-colors shadow-sm">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-3">
-                        Consulta realizada
-                      </span>
-                      <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-                        {queryTime
-                          ? queryTime.toLocaleTimeString("es-MX", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : "—"}
-                      </p>
-                      <p className="text-[11px] text-slate-500 mt-1 font-medium">
-                        {queryTime
-                          ? queryTime.toLocaleDateString("es-MX", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            })
-                          : ""}
-                      </p>
+                      <div className="bg-zinc-50 border border-zinc-200 p-4 rounded-xl">
+                        <p className="text-xs text-zinc-500 font-medium mb-1">
+                          Hora de consulta
+                        </p>
+                        <p className="text-base font-bold text-zinc-900">
+                          {queryTime?.toLocaleTimeString("es-MX", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Lines list */}
+                  {/* Search Bar */}
                   <div className="relative">
-                    <div className="max-h-125 overflow-y-auto space-y-3 pr-1 scroll-smooth">
-                      {results.map((linea, idx) => {
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                    <input
+                      type="text"
+                      placeholder="Buscar operadora o número..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full bg-white border border-zinc-200 px-10 py-3 rounded-xl text-sm outline-none transition-all placeholder:text-zinc-400 focus:border-black focus:ring-1 focus:ring-black shadow-sm"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-medium text-zinc-400 bg-zinc-100 px-2 py-1 rounded-md">
+                      {filteredResults.length} de {results.length} resultados
+                    </span>
+                  </div>
+
+                  {/* List of lines */}
+                  <div className="space-y-3 max-h-[650px] overflow-y-auto pr-2 custom-scrollbar">
+                    {filteredResults.length === 0 ? (
+                      <div className="bg-white border border-zinc-200 p-8 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm">
+                        <Search className="w-8 h-8 text-zinc-300 mb-3" />
+                        <p className="text-sm font-medium text-zinc-900">
+                          Sin coincidencias
+                        </p>
+                        <p className="text-xs text-zinc-500 mt-1">
+                          No hay resultados para "{searchQuery}"
+                        </p>
+                      </div>
+                    ) : (
+                      filteredResults.map((linea, idx) => {
                         const website = !linea.isPossible
                           ? getProviderWebsite(linea.operadora)
                           : null;
@@ -966,52 +985,54 @@ export default function MisLineas() {
                             key={linea.id}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: idx * 0.08 }}
-                            className="group bg-white border border-slate-100 p-5 sm:p-6 rounded-4xl hover:border-slate-300 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6"
+                            transition={{ delay: idx * 0.05 }}
+                            className="bg-white border border-zinc-200 shadow-sm p-4 sm:p-5 rounded-2xl flex items-center justify-between gap-4"
                           >
-                            <div className="flex items-center gap-4 sm:gap-5 flex-1 min-w-0">
-                              <div className="w-14 h-14 shrink-0 rounded-[1.25rem] bg-slate-50 flex items-center justify-center border border-slate-200 transition-all duration-300 group-hover:bg-slate-900 group-hover:border-slate-900">
-                                <Phone
-                                  className="w-6 h-6 text-slate-400 group-hover:text-white transition-colors"
-                                  aria-hidden="true"
-                                />
+                            <div className="flex items-center gap-4 min-w-0">
+                              <div className="w-10 h-10 bg-zinc-100 rounded-full flex items-center justify-center shrink-0">
+                                <Phone className="w-5 h-5 text-zinc-500" />
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                  <span className="text-lg font-extrabold text-slate-900 tracking-tight">
+                              <div>
+                                <div className="flex items-center gap-2 mb-0.5">
+                                  <span className="font-semibold text-zinc-900">
                                     {linea.operadora}
                                   </span>
                                   {linea.isPossible ? (
-                                    <span className="bg-amber-50 text-amber-700 text-[10px] font-bold px-3 py-0.5 rounded-full border border-amber-100 uppercase tracking-widest">
+                                    <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium">
                                       Posible
                                     </span>
+                                  ) : linea.isNotFound ? (
+                                    <span className="text-[10px] bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-full font-medium">
+                                      No encontrada
+                                    </span>
+                                  ) : linea.isError ? (
+                                    <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">
+                                      Error
+                                    </span>
                                   ) : (
-                                    <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-3 py-0.5 rounded-full border border-emerald-100 uppercase tracking-widest">
-                                      Registrado
+                                    <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-medium">
+                                      Registrada
                                     </span>
                                   )}
                                 </div>
-                                <div
+                                <p
                                   className={cn(
-                                    "font-mono font-bold tracking-tighter",
-                                    linea.numero === "Número no confirmado"
-                                      ? "text-sm text-slate-400 italic"
-                                      : "text-xl text-slate-800",
+                                    "font-mono text-base text-zinc-600",
+                                    linea.numero === "Número no confirmado" &&
+                                      "italic text-sm text-zinc-400",
+                                    (linea.isNotFound || linea.isError) &&
+                                      "italic text-sm text-zinc-400",
                                   )}
                                 >
                                   {linea.numero}
-                                </div>
-                                {linea.isPossible && (
-                                  <p className="text-xs text-amber-600 font-medium mt-1">
-                                    Operadora posible — número no confirmado
-                                  </p>
-                                )}
+                                </p>
                               </div>
                             </div>
 
-                            {/* Actions: copy + website link */}
-                            <div className="flex items-center gap-1 shrink-0">
+                            <div className="flex items-center gap-2 shrink-0">
                               {!linea.isPossible &&
+                                !linea.isNotFound &&
+                                !linea.isError &&
                                 linea.numero !== "Número no confirmado" && (
                                   <CopyButton text={linea.numero} />
                                 )}
@@ -1020,395 +1041,183 @@ export default function MisLineas() {
                                   href={website}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  aria-label={`Sitio oficial de ${linea.operadora}`}
-                                  className="p-2 rounded-xl hover:bg-slate-100 transition-colors"
+                                  className="p-2 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
                                 >
-                                  <ExternalLink
-                                    className="w-4 h-4 text-slate-400"
-                                    aria-hidden="true"
-                                  />
+                                  <ExternalLink className="w-4 h-4" />
                                 </a>
                               )}
                             </div>
                           </motion.div>
                         );
-                      })}
-
-                      {/* Providers with no lines */}
-                      {rawResponses &&
-                        (() => {
-                          const noMatch = rawResponses.filter(
-                            (r) =>
-                              !r.result.error &&
-                              (r.result.lines?.length ?? 0) === 0 &&
-                              (r.result.possibleProviders?.length ?? 0) === 0,
-                          );
-                          if (noMatch.length === 0) return null;
-                          return (
-                            <>
-                              <div
-                                className="flex items-center gap-3 pt-2"
-                                aria-hidden="true"
-                              >
-                                <div className="flex-1 h-px bg-slate-100" />
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">
-                                  Sin registro
-                                </span>
-                                <div className="flex-1 h-px bg-slate-100" />
-                              </div>
-                              {noMatch.map((r) => (
-                                <div
-                                  key={r.provider}
-                                  className="flex items-center justify-between bg-slate-50 border border-slate-100 px-5 py-4 rounded-2xl"
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center">
-                                      <Phone
-                                        className="w-4 h-4 text-slate-300"
-                                        aria-hidden="true"
-                                      />
-                                    </div>
-                                    <span className="text-sm font-semibold text-slate-500">
-                                      {r.result.company}
-                                    </span>
-                                  </div>
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                    No registrado
-                                  </span>
-                                </div>
-                              ))}
-                            </>
-                          );
-                        })()}
-                    </div>
-                    {/* Scroll fade indicator */}
-                    <div
-                      className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-linear-to-t from-[#FAFAFA] to-transparent rounded-b-4xl"
-                      aria-hidden="true"
-                    />
+                      })
+                    )}
                   </div>
-                </motion.section>
+                </motion.div>
               ) : null}
             </AnimatePresence>
-          </motion.div>
+          </div>
         </div>
 
-        {/* Authors on mobile */}
-        <div className="lg:hidden mt-8 flex flex-col gap-3">
-          <AuthorCard
-            name="Jorge Mora"
-            github="moraxh"
-            href="https://github.com/moraxh"
-            delay={0.2}
-          />
-          <AuthorCard
-            name="Hadassah García"
-            github="HadassahGarcia"
-            href="https://github.com/HadassahGarcia"
-            delay={0.3}
-          />
-        </div>
-
-        {/* Sections */}
-        <div className="mt-24 sm:mt-40 space-y-24 sm:space-y-32">
-          {/* Why cards */}
-          <motion.section
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-          >
-            <div className="mb-10">
-              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mb-3">
+        {/* Explain sections */}
+        <div className="mt-20 space-y-16">
+          <section className="grid sm:grid-cols-3 gap-6">
+            <div className="sm:col-span-3 mb-2">
+              <h2 className="text-2xl font-bold text-zinc-900">
                 ¿Por qué usar MisLíneas?
               </h2>
-              <p className="text-slate-500 text-base sm:text-lg font-medium max-w-xl">
+              <p className="text-zinc-600">
                 Centralizamos la fragmentación del ecosistema móvil mexicano.
               </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {WHY_CARDS.map((card, i) => (
-                <motion.div
-                  key={card.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  className="bg-white border border-slate-200 rounded-3xl p-7 hover:border-slate-400 hover:shadow-lg hover:shadow-slate-100 transition-all group"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center mb-5 group-hover:bg-slate-900 transition-colors">
-                    <card.icon
-                      className="w-5 h-5 text-slate-600 group-hover:text-white transition-colors"
-                      aria-hidden="true"
-                    />
-                  </div>
-                  <h3 className="font-extrabold text-slate-900 text-lg mb-2 tracking-tight">
-                    {card.title}
-                  </h3>
-                  <p className="text-sm text-slate-500 leading-relaxed font-medium">
-                    {card.body}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-          </motion.section>
+            {WHY_CARDS.map((card) => (
+              <div
+                key={card.title}
+                className="bg-white border border-zinc-200 p-6 rounded-2xl shadow-sm"
+              >
+                <card.icon className="w-6 h-6 text-black mb-4" />
+                <h3 className="font-semibold text-zinc-900 mb-2">
+                  {card.title}
+                </h3>
+                <p className="text-sm text-zinc-600">{card.body}</p>
+              </div>
+            ))}
+          </section>
 
           {/* Seguridad */}
-          <motion.section
+          <section
             id="seguridad"
-            className="scroll-mt-24"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="bg-black text-white rounded-3xl p-8 sm:p-12 scroll-mt-24"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 sm:gap-16 items-center">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
               <div>
-                <div className="w-11 h-11 rounded-2xl bg-slate-900 flex items-center justify-center mb-6">
-                  <Lock className="w-5 h-5 text-white" aria-hidden="true" />
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-5">
-                  Seguridad y Cifrado Efímero
+                <Lock className="w-8 h-8 text-zinc-400 mb-6" />
+                <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+                  Seguridad Zero-Knowledge
                 </h2>
-                <p className="text-slate-600 leading-relaxed mb-6 font-medium text-sm sm:text-base">
-                  Nuestra arquitectura está diseñada bajo el principio de{" "}
-                  <span className="text-slate-900 font-bold italic underline decoration-slate-300 underline-offset-4">
-                    Zero-Knowledge
-                  </span>
-                  . No contamos con una base de datos de usuarios; cada consulta
+                <p className="text-zinc-400 leading-relaxed mb-6">
+                  No contamos con una base de datos de usuarios; cada consulta
                   orquesta conexiones cifradas de punto a punto con los
                   registros oficiales de las operadoras.
                 </p>
-                <ul
-                  className="space-y-3 font-medium"
-                  aria-label="Características de seguridad"
-                >
+                <ul className="space-y-3">
                   {[
-                    "Cifrado AES-256 para el tráfico de datos.",
-                    "Destrucción automática de la sesión al finalizar.",
-                    "No almacenamos CURPs ni números telefónicos.",
-                    "Cumplimiento con estándares internacionales de privacidad.",
+                    "Cifrado AES-256 de extremo a extremo.",
+                    "Sesión destruida automáticamente.",
+                    "No almacenamos CURP ni números.",
+                    "Cumplimiento de privacidad.",
                   ].map((item) => (
                     <li
                       key={item}
-                      className="flex items-start gap-3 text-sm text-slate-700"
+                      className="flex items-center gap-3 text-sm text-zinc-300"
                     >
-                      <CheckCircle2
-                        className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5"
-                        aria-hidden="true"
-                      />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />{" "}
                       {item}
                     </li>
                   ))}
                 </ul>
               </div>
-
-              <div className="bg-slate-900 rounded-[3rem] p-6 sm:p-8 flex flex-col gap-4 shadow-2xl shadow-slate-200">
-                <div className="p-5 sm:p-6 bg-slate-800 rounded-2xl border border-slate-700">
-                  <div className="flex gap-2 mb-4" aria-hidden="true">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-400/70" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-amber-400/70" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-400/70" />
-                  </div>
-                  <div className="space-y-2" aria-hidden="true">
-                    <div className="h-3 bg-slate-700 rounded-full w-3/4 animate-pulse" />
-                    <div className="h-3 bg-slate-700 rounded-full w-1/2 animate-pulse" />
-                    <div className="h-3 bg-slate-700 rounded-full w-5/6 animate-pulse" />
-                  </div>
-                  <div className="text-[10px] text-emerald-400 font-mono mt-5 uppercase tracking-widest">
-                    ▶ Encrypted_Tunnel_Active
-                  </div>
+              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl">
+                <div className="flex justify-between items-center text-xs font-mono text-zinc-500 mb-4 pb-4 border-b border-zinc-800">
+                  <span>STATUS: SECURE</span>
+                  <span className="text-emerald-400">● ENCRYPTED TUNNEL</span>
                 </div>
-
-                <div className="p-6 sm:p-8 border-2 border-dashed border-slate-600 rounded-2xl flex flex-col items-center justify-center py-10 sm:py-14 gap-3">
-                  <ShieldCheck
-                    className="w-12 h-12 text-emerald-400"
-                    aria-hidden="true"
-                  />
-                  <span className="text-[11px] font-bold text-slate-300 uppercase tracking-widest">
-                    End-to-End Encryption
-                  </span>
+                <div className="space-y-4">
+                  <div className="h-2 bg-zinc-800 rounded w-3/4" />
+                  <div className="h-2 bg-zinc-800 rounded w-5/6" />
+                  <div className="h-2 bg-zinc-800 rounded w-1/2" />
                 </div>
+              </div>
+            </div>
+          </section>
 
-                <div className="grid grid-cols-3 gap-3">
+          {/* Derechos ARCO */}
+          <section id="arco" className="scroll-mt-24">
+            <h2 className="text-2xl font-bold text-zinc-900 mb-6">
+              Derechos ARCO y Denuncias
+            </h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="bg-white border border-zinc-200 rounded-2xl p-6 shadow-sm">
+                <p className="text-sm text-zinc-600 mb-6 leading-relaxed">
+                  La protección de datos personales te permite ejercer derechos
+                  ARCO (Acceso, Rectificación, Cancelación, Oposición) ante
+                  cualquier operadora.
+                </p>
+                <div className="grid grid-cols-2 gap-4">
                   {[
-                    { val: "AES-256", lbl: "Cifrado" },
-                    { val: "0", lbl: "Datos guardados" },
-                    { val: "100%", lbl: "Efímero" },
-                  ].map((s) => (
+                    { t: "Acceso", d: "Conoce qué datos tienen de ti" },
+                    { t: "Rectificación", d: "Corrige lo inexacto" },
+                    { t: "Cancelación", d: "Elimina tus datos" },
+                    { t: "Oposición", d: "Niégate al uso" },
+                  ].map((a) => (
                     <div
-                      key={s.val}
-                      className="bg-slate-800 rounded-2xl p-4 text-center border border-slate-700"
+                      key={a.t}
+                      className="bg-zinc-50 p-4 rounded-xl border border-zinc-100"
                     >
-                      <div className="text-white font-extrabold text-sm sm:text-base">
-                        {s.val}
-                      </div>
-                      <div className="text-slate-400 text-[10px] font-medium mt-1 leading-tight">
-                        {s.lbl}
-                      </div>
+                      <h4 className="font-semibold text-sm text-zinc-900 mb-1">
+                        {a.t}
+                      </h4>
+                      <p className="text-xs text-zinc-500">{a.d}</p>
                     </div>
                   ))}
                 </div>
               </div>
-            </div>
-          </motion.section>
 
-          {/* Derechos ARCO */}
-          <motion.section
-            id="arco"
-            className="scroll-mt-24"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-          >
-            <div className="bg-slate-900 rounded-[3rem] sm:rounded-[3.5rem] p-8 sm:p-12 text-white overflow-hidden relative shadow-2xl shadow-slate-200">
-              <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-10 sm:gap-12 items-start">
+              <div className="bg-white border border-zinc-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
                 <div>
-                  <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-5 underline decoration-slate-700 underline-offset-8">
-                    Derechos ARCO
-                  </h2>
-                  <p className="text-slate-400 text-base sm:text-lg leading-relaxed mb-8 font-medium">
-                    La protección de datos personales es un derecho
-                    constitucional (Art. 16 CPEUM) desarrollado por la LFPDPPP.
-                    Puedes ejercer derechos ARCO ante cualquier empresa que
-                    trate tus datos para exigir acceso, corrección o eliminación
-                    de información personal.
+                  <div className="flex items-center gap-3 mb-4">
+                    <ShieldAlert className="w-6 h-6 text-red-500" />
+                    <h3 className="font-semibold text-zinc-900">
+                      ¿Detectaste fraude?
+                    </h3>
+                  </div>
+                  <p className="text-sm text-zinc-600 leading-relaxed mb-6">
+                    Si encontraste una línea que no reconoces, debes presentar
+                    una denuncia ante la operadora responsable. El uso indebido
+                    de identidad es un delito.
                   </p>
-                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                    {[
-                      { t: "Acceso", d: "Conoce qué datos tienen sobre ti." },
-                      {
-                        t: "Rectificación",
-                        d: "Corrige información inexacta.",
-                      },
-                      { t: "Cancelación", d: "Elimina datos innecesarios." },
-                      { t: "Oposición", d: "Niégate al uso de tus datos." },
-                    ].map((arco) => (
-                      <div
-                        key={arco.t}
-                        className="bg-white/5 border border-white/10 p-4 sm:p-5 rounded-2xl hover:bg-white/10 transition-colors"
-                      >
-                        <div className="font-bold text-base sm:text-lg mb-1">
-                          {arco.t}
-                        </div>
-                        <div className="text-xs text-slate-400 leading-tight font-medium">
-                          {arco.d}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
                 </div>
-                <div className="space-y-4">
-                  <div className="p-6 sm:p-8 bg-white/5 border border-white/10 rounded-3xl flex items-start gap-4">
-                    <ShieldAlert
-                      className="w-6 h-6 text-emerald-400 shrink-0 mt-0.5"
-                      aria-hidden="true"
-                    />
-                    <div>
-                      <h4 className="font-bold text-base sm:text-lg mb-2">
-                        ¿Detectaste una línea que no es tuya?
-                      </h4>
-                      <p className="text-sm text-slate-400 leading-relaxed font-medium">
-                        Presenta una denuncia directamente ante la operadora y,
-                        si es necesario, ante el IFT o autoridades competentes.
-                        Ellos evaluarán la suspensión conforme a la normativa
-                        aplicable. ARCO aplica sobre tus datos personales, no
-                        sobre servicios de terceros.
-                      </p>
-                    </div>
-                  </div>
-                  <a
-                    href="https://portal.crt.gob.mx/reporte-fallas-plataforma-registro"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-6 sm:p-8 bg-red-500/10 border border-red-500/20 rounded-3xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 group hover:bg-red-500/20 transition-all"
-                  >
-                    <span className="font-bold text-red-400 text-base sm:text-lg">
-                      ¿Detectaste fraude o línea no autorizada?
-                    </span>
-                    <div className="bg-white text-slate-900 px-6 py-3 rounded-2xl text-sm font-bold hover:bg-red-400 hover:text-white transition-all shadow-lg active:scale-95 shrink-0 flex items-center gap-2">
-                      <ShieldAlert className="w-4 h-4" aria-hidden="true" />
-                      Reportar Fraude
-                    </div>
-                  </a>
-                </div>
-              </div>
-              <div
-                className="absolute -bottom-20 -right-20 opacity-[0.03] select-none text-[22rem] font-black leading-none"
-                aria-hidden="true"
-              >
-                IFT
+                <a
+                  href="https://portal.crt.gob.mx/reporte-fallas-plataforma-registro"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                >
+                  <ShieldAlert className="w-4 h-4" /> Reportar fraude en portal
+                  CRT
+                </a>
               </div>
             </div>
-          </motion.section>
+          </section>
         </div>
 
         {/* Footer */}
-        <footer className="mt-24 sm:mt-40 pt-12 border-t border-slate-100">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6">
-            <div className="flex items-center gap-2">
-              <Image
-                src={logo}
-                alt="MisLíneas"
-                width={28}
-                height={28}
-                className="rounded-lg"
-              />
-              <span className="font-bold text-slate-900">MisLíneas</span>
-            </div>
-            <p className="text-xs text-slate-400 font-medium tracking-widest uppercase text-center sm:text-right">
-              Plataforma ciudadana independiente · México 2026
-            </p>
+        <footer className="mt-20 pt-8 border-t border-zinc-200 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-zinc-500">
+          <div className="flex items-center gap-2 font-medium text-zinc-900">
+            <Image
+              src={logo}
+              alt="MisLíneas"
+              width={20}
+              height={20}
+              className="rounded"
+            />{" "}
+            MisLíneas
           </div>
-          <div className="mt-8 pb-8 text-center">
-            <p className="text-[10px] text-slate-500 font-medium tracking-widest uppercase">
-              No afiliado al Gobierno de México
-            </p>
+          <div className="flex flex-col md:flex-row items-center gap-4 text-xs font-medium">
+            <span>Plataforma ciudadana independiente</span>
+            <span className="hidden md:block text-zinc-300">&bull;</span>
+            <span>No afiliado al Gobierno de México</span>
+            <span className="hidden md:block text-zinc-300">&bull;</span>
+            <a
+              href="https://github.com/moraxh/MisLineas"
+              className="hover:text-black transition-colors"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Repositorio Open Source
+            </a>
           </div>
         </footer>
       </main>
     </div>
-  );
-}
-
-interface AuthorCardProps {
-  name: string;
-  github: string;
-  href: string;
-  delay?: number;
-}
-
-function AuthorCard({ name, github, href, delay = 0 }: AuthorCardProps) {
-  return (
-    <motion.a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={`${name} — github.com/${github}`}
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay }}
-      className="group flex items-center gap-4 p-5 bg-slate-900 text-white rounded-2xl hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 cursor-pointer"
-    >
-      <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center shrink-0 group-hover:bg-white/20 transition-colors">
-        <Github className="w-5 h-5 text-white" aria-hidden="true" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
-          {github === "moraxh" ? "Autor del proyecto" : "Autora del proyecto"}
-        </div>
-        <div className="font-extrabold text-base tracking-tight truncate">
-          {name}
-        </div>
-        <div className="text-xs text-slate-400 font-medium">
-          github.com/{github}
-        </div>
-      </div>
-      <ExternalLink
-        className="w-4 h-4 text-slate-500 group-hover:text-slate-300 transition-colors shrink-0"
-        aria-hidden="true"
-      />
-    </motion.a>
   );
 }
