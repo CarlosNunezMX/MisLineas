@@ -26,6 +26,11 @@ export const metadata: Metadata = {
     siteName: "MisLíneas",
     locale: "es_MX",
     type: "website",
+    images: [
+      {
+        url: "https://mislineas.com.mx/preview.png",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
