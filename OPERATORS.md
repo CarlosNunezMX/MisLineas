@@ -1,0 +1,108 @@
+- [x] 2y2x — https://rnu.altanredes.com/consulta  
+- [x] Abafon — https://rnu.altanredes.com/consulta  
+- [x] Abib — https://abib.com.mx/#/vinculatulinea | https://www.abibinternetdelbienestar.mx/vinculatulinea  
+- [x] Abix — https://rnu.altanredes.com/consulta  
+- [x] Addinteli — https://rnu.altanredes.com/consulta  
+- [ ] AhorroCel — https://vinculatulinea.com/Ahorrocel  
+- [x] AI Telecomm — https://rnu.altanredes.com/consulta  
+- [] ALLCE — https://vinculacion.allce.mx/consulta | https://rnu.altanredes.com/consulta  
+- [x] AT&T, Unefon y WIM marca digital AT&T — https://att.com.mx/controlpersonal  
+- [x] Bait — https://btz.mx/consultaregistro  
+- [-] Beneleit Móvil — https://beneleit.mx/consultalineas  
+- [-] Bestel — https://facturacion.bestel.com.mx  
+- [x] BienCel — https://rnu.altanredes.com/consulta  
+- [x] Bigcel — https://rnu.altanredes.com/consulta  
+- [x] Bromovil — https://rnu.altanredes.com/consulta  
+- [ ] Cablecom — https://facturacion.bestel.com.mx  
+- [x] CFE — https://rnu.altanredes.com/consulta  
+- [ ] Chedraui Móvil — https://vinculatulinea.com/Chedrauimovil  
+- [x] Chip Macropay — https://rnu.altanredes.com/consulta  
+- [x] CoolMobile — https://rnu.altanredes.com/consulta  
+- [x] Comunicaciones Green — https://rnu.altanredes.com/consulta  
+- [x] Conect2 — https://rnu.altanredes.com/consulta  
+- [ ] Dalefon — https://www.dalefon.mx/vinculatulinea | https://www.internetbienestarmex.com/vinculatulinea  
+- [x] Dialo — https://dialo.mx/vinculatulinea  
+- [x] Diri Móvil — https://rnu.altanredes.com/consulta  
+- [x] Dua — https://consulta.logisticaacn.mx  
+- [x] ENI Networks — https://rnu.altanredes.com/consulta  
+- [x] Fangio Mobile — https://rnu.altanredes.com/consulta  
+- [x] Fedego! — https://consulta.logisticaacn.mx  
+- [x] Fibracell — https://rnu.altanredes.com/consulta  
+- [x] Flash Mobile — https://consulta.logisticaacn.mx  
+- [x] FRC Mobile — https://rnu.altanredes.com/consulta  
+- [ ] Freedompop — https://vinculatulinea.com/Freedompop  
+- [x] Gamers — https://rnu.altanredes.com/consulta  
+- [x] Gane — https://rnu.altanredes.com/consulta  
+- [x] Glovo Telecom — https://rnu.altanredes.com/consulta  
+- [x] Gmovil — https://rnu.altanredes.com/consulta  
+- [x] Grupo Inten — https://rnu.altanredes.com/consulta  
+- [x] Hashtag — https://rnu.altanredes.com/consulta  
+- [x] I AM Abundance — https://rnu.altanredes.com/consulta  
+- [x] IENTC — https://movilidad.ientc.net/vinculatulinea  
+- [x] Interlinked — https://rnu.altanredes.com/consulta  
+- [x] Inxel — https://rnu.altanredes.com/consulta  
+- [x] Iusatel — https://rnu.altanredes.com/consulta  
+- [ ] Izzi — https://www.izzi.mx/login  
+- [x] Link Móvil — https://movil.linkteconectamos.com/consultar-vinculacion/  
+- [x] Kolors Mobile — https://rnu.altanredes.com/consulta  
+- [x] Maifon — https://rnu.altanredes.com/consulta  
+- [x] Mega Móvil — https://consultavinculacion.megamovil.mx  
+- [x] México Móvil — https://rnu.altanredes.com/consulta  
+- [x] Mexfon — https://rnu.altanredes.com/consulta  
+- [] Mi móvil — https://vinculacion.mimovil.com.mx/consulta | https://rnu.altanredes.com/consulta  
+- [x] Mirlo — https://mirlo.com/vincularlinea/consulta  
+- [Falta verificar] MoBig — https://mobig.mx/vinculatulinea/consulta-curp | https://femaseisa.com/vinculatulinea/consulta-curp  
+- [ ] Mosi — https://vinculacion.mosi.mx/consulta  
+- [x] MobileArionet — https://rnu.altanredes.com/consulta  
+- [x] Movired — https://rnu.altanredes.com/consulta  
+- [x] Móvil para Todos — https://rnu.altanredes.com/consulta  
+- [x] Nabi — https://rnu.altanredes.com/consulta  
+- [x] Netmas — https://rnu.altanredes.com/consulta  
+- [x] Newww — https://consultavinculacion.newww.mx  
+- [x] Nextor Movil — https://vinculacion.nextormovil.mx  
+- [x] On-Link — https://rnu.altanredes.com/consulta  
+- [] OUI — https://vinculatulinea.com/oui/welcome | https://rnu.altanredes.com/consulta  
+- [x] Othisi Mobile — https://rnu.altanredes.com/consulta  
+- [ ] Oxio — https://verificar.oxiomobile.com/consultatuslineas  
+- [ ] OXXO CEL — https://vinculatulinea.com/Oxxocel  
+- [x] PilloFon — https://rnu.altanredes.com/consulta  
+- [x] Playcell — https://rnu.altanredes.com/consulta  
+- [x] Red Aguila — https://consultavinculacion.redaguila.com.mx  
+- [x] Red Blak — https://rnu.altanredes.com/consulta  
+- [x] Red Dog — https://rnu.altanredes.com/consulta  
+- [x] Red Potencia — https://redpotencia.net/lineasvinculadas | https://internetbienestar.net/lineasvinculadas  
+- [ ] Redphone — https://redphone.vinculacion.koonolmexico.com/consulta | https://vinculacion.redphone.com.mx/consulta  
+- [x] Redicoppel — https://rnu.altanredes.com/consulta  
+- [x] Retemex — https://rnu.altanredes.com/consulta  
+- [x] RETESEC — https://rnu.altanredes.com/consulta  
+- [x] Rincel — https://rnu.altanredes.com/consulta  
+- [x] Secure Witness — https://rnu.altanredes.com/consulta  
+- [x] Sfon — https://rnu.altanredes.com/consulta  
+- [ ] Sky — https://micuenta.sky.com.mx  
+- [x] Sorcel — https://www.soriup.mx/consultavinculacion  
+- [x] Spot 1 — https://rnu.altanredes.com/consulta  
+- [x] Starline — https://rnu.altanredes.com/consulta  
+- [x] Telcel — https://registro.telcel.com/vinculatulinea  
+- [x] Telefónica Luna — https://rnu.altanredes.com/consulta  
+- [ ] Teléfonica Movistar — https://www.movistar.com.mx/consulta-tu-linea  
+- [x] Telgen — https://rnu.altanredes.com/consulta  
+- [x] Telmovil — https://rnu.altanredes.com/consulta  
+- [x] Teracel — https://rnu.altanredes.com/consulta  
+- [x] TIC-OMV — https://rnu.altanredes.com/consulta  
+- [ ] Tokamóvil — https://tokamovil.mx/cumplimiento/consulta-vinculacion  
+- [x] Tuis — https://rnu.altanredes.com/consulta  
+- [x] TurboCel — https://rnu.altanredes.com/consulta  
+- [x] Turbored — https://rnu.altanredes.com/consulta  
+- [ ] Uber Cel — https://vinculatulinea.com/Ubercel  
+- [x] Ultracel — https://rnu.altanredes.com/consulta  
+- [x] Vasanta — https://rnu.altanredes.com/consulta  
+- [ ] Viral Cel — https://www.viralcel.com/mi-linea  
+- [x] Virgin Mobile — https://virginmobile.mx/v1/consultatulinea  
+- [x] VivaMX — https://rnu.altanredes.com/consulta  
+- [x] Weex — https://weex.mx/consultalineas.html  
+- [ ] Wiicel — https://wiicel.com  
+- [x] Wiki Katat — https://rnu.altanredes.com/consulta  
+- [x] Wimotelecom — https://rnu.altanredes.com/consulta  
+- [Falta verificar] Yo mobile — https://mx.yomobile.com/consulta  
+- [ ] Yobi Telecom — https://vinculatulinea.com/YobiTelecom  
+- [ ] Yu Movil — https://www.yumovil.com.mx/login  
