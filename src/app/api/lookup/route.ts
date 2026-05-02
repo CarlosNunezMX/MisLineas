@@ -52,10 +52,11 @@ const providers: Array<{
     provider: "Logistica ACN (FedeGo!, Flash Mobile, Dua)",
     lookupFunction: lookupCURPInLogisticaACN,
   },
-  {
-    provider: "Mega Móvil",
-    lookupFunction: lookupCURPInMegamovil,
-  },
+  // {
+  //   provider: "Mega Móvil",
+  //   lookupFunction: lookupCURPInMegamovil,
+  //   // Disabled: WAF blocks server IP (Attack ID: 20000018)
+  // },
   {
     provider: "Mirlo",
     lookupFunction: lookupCURPInMirlo,
@@ -68,14 +69,16 @@ const providers: Array<{
     provider: "Nextor Movil",
     lookupFunction: lookupCURPINNextorMovil,
   },
-  {
-    provider: "Sorcel",
-    lookupFunction: lookupCURPInSorcel,
-  },
-  {
-    provider: "TalentoNet (Newww, Red Aguila, Link Móvil)",
-    lookupFunction: loookupCURPInTalentoNetMVNO,
-  },
+  // {
+  //   provider: "Sorcel",
+  //   lookupFunction: lookupCURPInSorcel,
+  //   // Disabled: Cloudflare JS challenge blocks server-side requests
+  // },
+  // {
+  //   provider: "TalentoNet (Newww, Red Aguila, Link Móvil)",
+  //   lookupFunction: loookupCURPInTalentoNetMVNO,
+  //   // Disabled: ConnectTimeoutError on core.newww.mx:443
+  // },
   {
     provider: "Virgin Mobile",
     lookupFunction: loookupCURPInVirginMobile,
