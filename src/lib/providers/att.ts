@@ -108,15 +108,13 @@ export async function lookupCURPInATT(curp: string): Promise<LineResult> {
     };
   }
 
-  console.log(
-    "AT&T customer validation response:",
-    JSON.stringify(validationData, null, 2),
-  );
-
   const data = validationData.data;
 
   if (data.countLines > 0) {
-    console.log("[att] registered response:", JSON.stringify(validationData, null, 2));
+    console.log(
+      "[att] registered response:",
+      JSON.stringify(validationData, null, 2),
+    );
     return {
       company: "AT&T",
       lines: [],
