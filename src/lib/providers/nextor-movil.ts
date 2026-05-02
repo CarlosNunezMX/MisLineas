@@ -11,6 +11,20 @@ export async function lookupCURPINNextorMovil(
   );
 
   if (!authResponse.ok) {
+    const errorData = await authResponse.json();
+
+    if (errorData.code === "IP_RATE_LIMIT") {
+      console.warn(
+        "Nextor Movil rate limit hit. Returning rate limit error.",
+        errorData,
+      );
+      return {
+        company: "Nextor Movil",
+        lines: [],
+        error: "Nextor Movil rate limit exceeded. Please try again later.",
+      };
+    }
+
     return {
       company: "Nextor Movil",
       lines: [],
@@ -56,7 +70,10 @@ export async function lookupCURPINNextorMovil(
   const validationData = await validationResponse.json();
 
   if (validationData.encontrado) {
-    console.log("[nextor-movil] registered response:", JSON.stringify(validationData, null, 2));
+    console.log(
+      "[nextor-movil] registered response:",
+      JSON.stringify(validationData, null, 2),
+    );
     return {
       company: "Nextor Movil",
       lines: [],
