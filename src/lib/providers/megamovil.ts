@@ -22,7 +22,8 @@ export async function lookupCURPInMegamovil(curp: string): Promise<LineResult> {
 
   if (
     validationData.message ===
-    "La CURP ingresada no cuenta con líneas Mega móvil vinculadas."
+      "La CURP ingresada no cuenta con líneas Mega móvil vinculadas." ||
+    validationData.status === "ERROR"
   ) {
     return {
       company: "Megamovil",
@@ -31,7 +32,10 @@ export async function lookupCURPInMegamovil(curp: string): Promise<LineResult> {
     };
   }
 
-  console.log("[megamovil] registered response:", JSON.stringify(validationData, null, 2));
+  console.log(
+    "[megamovil] registered response:",
+    JSON.stringify(validationData, null, 2),
+  );
   return {
     company: "Megamovil",
     lines: [],

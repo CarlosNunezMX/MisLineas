@@ -6,10 +6,12 @@ import {
   Building2,
   Check,
   CheckCircle2,
+  ChevronDown,
   ClipboardPaste,
   Copy,
   ExternalLink,
   Eye,
+  Flag,
   Github,
   History,
   Loader2,
@@ -158,7 +160,7 @@ const CURP_REGEX = /^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/;
 
 function getCurpValidationError(curp: string): string | null {
   if (curp.length === 0) return null;
-  if (curp.length < 18) return null; // handled by counter
+  if (curp.length < 18) return null;
   if (!/^[A-Z]{4}/.test(curp))
     return "Los primeros 4 caracteres deben ser letras.";
   if (!/^[A-Z]{4}\d{6}/.test(curp))
@@ -195,6 +197,8 @@ interface ProviderResponse {
   provider: string;
   result: ProviderResult;
 }
+
+type FilterTab = "all" | "confirmed" | "possible" | "errors";
 
 function transformApiResponse(responses: ProviderResponse[]): DisplayLine[] {
   const lines: DisplayLine[] = [];
@@ -298,7 +302,6 @@ function transformApiResponse(responses: ProviderResponse[]): DisplayLine[] {
     }
   }
 
-  // Sort: confirmed lines first, then possible, then not found, then errors
   lines.sort((a, b) => {
     const aScore = a.isError ? 3 : a.isNotFound ? 2 : a.isPossible ? 1 : 0;
     const bScore = b.isError ? 3 : b.isNotFound ? 2 : b.isPossible ? 1 : 0;
@@ -400,6 +403,113 @@ function CopyButton({ text }: { text: string }) {
 }
 
 // ---------------------------------------------------------------------------
+// Report ARCO dialog
+// ---------------------------------------------------------------------------
+function ReportDialog({
+  operadora,
+  onClose,
+}: {
+  operadora: string;
+  onClose: () => void;
+}) {
+  const website = getProviderWebsite(operadora);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+      onClick={onClose}
+      aria-modal="true"
+      role="dialog"
+      aria-label={`Opciones ARCO para ${operadora}`}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.15 }}
+        className="bg-white rounded-2xl shadow-xl border border-zinc-200 p-6 max-w-sm w-full space-y-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="font-bold text-zinc-900 text-base">
+              Desconocer línea
+            </h3>
+            <p className="text-sm text-zinc-500 mt-0.5">{operadora}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 hover:bg-zinc-100 rounded-lg transition-colors text-zinc-400 hover:text-zinc-900"
+            aria-label="Cerrar"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <p className="text-sm text-zinc-600 leading-relaxed">
+          Puedes ejercer tus derechos ARCO (Acceso, Rectificación, Cancelación,
+          Oposición) directamente ante la operadora o reportar fraude al CRT.
+        </p>
+
+        <div className="space-y-2">
+          {website && (
+            <a
+              href={website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 bg-zinc-900 hover:bg-zinc-700 text-white text-sm font-medium py-2.5 rounded-xl transition-colors"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Ir al sitio de {operadora}
+            </a>
+          )}
+          <a
+            href="https://portal.crt.gob.mx/reporte-fallas-plataforma-registro"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium py-2.5 rounded-xl transition-colors"
+          >
+            <ShieldAlert className="w-4 h-4" />
+            Reportar fraude en portal CRT
+          </a>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full text-sm text-zinc-500 hover:text-zinc-900 py-2 transition-colors"
+          >
+            Cancelar
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton loader card
+// ---------------------------------------------------------------------------
+function SkeletonCard() {
+  return (
+    <div className="bg-white border border-zinc-200 shadow-sm p-4 sm:p-5 rounded-2xl flex items-center gap-4 animate-pulse">
+      <div className="w-10 h-10 bg-zinc-100 rounded-full shrink-0" />
+      <div className="flex-1 space-y-2">
+        <div className="h-3.5 bg-zinc-100 rounded w-1/3" />
+        <div className="h-3 bg-zinc-100 rounded w-1/2" />
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main page
 // ---------------------------------------------------------------------------
 export default function MisLineas() {
@@ -413,6 +523,11 @@ export default function MisLineas() {
   const [queryTime, setQueryTime] = useState<Date | null>(null);
   const [history, setHistory] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
+  const [notFoundExpanded, setNotFoundExpanded] = useState(false);
+  const [reportTarget, setReportTarget] = useState<string | null>(null);
+  const [scannedCount, setScannedCount] = useState(0);
+  const [liveMessage, setLiveMessage] = useState("");
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -439,6 +554,12 @@ export default function MisLineas() {
 
   const curpValidationError = getCurpValidationError(curp);
   const curpIsValid = curp.length === 18 && !curpValidationError;
+  const curpCountColor =
+    curp.length === 18 && !curpValidationError
+      ? "text-emerald-500"
+      : curp.length === 18
+        ? "text-red-500"
+        : "text-zinc-400";
 
   const handlePasteCurp = async () => {
     try {
@@ -450,9 +571,7 @@ export default function MisLineas() {
       if (sanitized) {
         setCurp(sanitized);
       }
-    } catch {
-      // Ignore if clipboard access fails or is denied
-    }
+    } catch {}
   };
 
   const handleConsultar = async (e: React.FormEvent) => {
@@ -460,17 +579,20 @@ export default function MisLineas() {
     if (!curpIsValid) return;
 
     setError(null);
-    setResults([]); // Array vacío para inicio de stream
+    setResults([]);
     setRawResponses([]);
     setSearchQuery("");
     setTimedOut(false);
     setLoading(true);
     setQueryTime(null);
+    setScannedCount(0);
+    setActiveFilter("all");
+    setNotFoundExpanded(false);
+    setLiveMessage("Iniciando consulta...");
 
     const controller = new AbortController();
     abortRef.current = controller;
 
-    // Ampliamos el timeout global porque el streaming toma su tiempo dependiendo de la API más lenta
     const timeoutId = setTimeout(() => {
       controller.abort();
       setTimedOut(true);
@@ -503,7 +625,6 @@ export default function MisLineas() {
 
         buffer += decoder.decode(value, { stream: true });
         const parts = buffer.split("\n");
-        // El último elemento podría estar incompleto, así que lo guardamos en el buffer
         buffer = parts.pop() || "";
 
         for (const line of parts) {
@@ -516,20 +637,25 @@ export default function MisLineas() {
           }
         }
 
-        // Actualizamos estado en tiempo real
+        setScannedCount(accumulatedResponses.length);
+        setLiveMessage(
+          `Escaneando proveedor ${accumulatedResponses.length}...`,
+        );
         setRawResponses([...accumulatedResponses]);
         setResults(transformApiResponse([...accumulatedResponses]));
       }
 
+      setLiveMessage("Consulta completada.");
       clearTimeout(timeoutId);
     } catch (err: unknown) {
       clearTimeout(timeoutId);
       if ((err as Error)?.name === "AbortError") return;
-      setError(
+      const msg =
         err instanceof Error
           ? err.message
-          : "Error de conexión. Verifica tu red.",
-      );
+          : "Error de conexión. Verifica tu red.";
+      setError(msg);
+      setLiveMessage(`Error: ${msg}`);
     } finally {
       setLoading(false);
     }
@@ -548,6 +674,9 @@ export default function MisLineas() {
     setSearchQuery("");
     setError(null);
     setTimedOut(false);
+    setScannedCount(0);
+    setActiveFilter("all");
+    setNotFoundExpanded(false);
   };
 
   const riskLevel = results ? getRiskLevel(results) : null;
@@ -555,20 +684,76 @@ export default function MisLineas() {
     ? results.filter((l) => !l.isNotFound && !l.isError).length
     : 0;
 
-  const filteredResults = results
-    ? results.filter((l) => {
-        if (!searchQuery) return true;
-        const q = searchQuery.toLowerCase();
-        return (
-          l.operadora.toLowerCase().includes(q) ||
-          l.numero.toLowerCase().includes(q)
-        );
-      })
+  // Partition results
+  const confirmedLines = results
+    ? results.filter((l) => !l.isPossible && !l.isNotFound && !l.isError)
     : [];
-  // hasNoLines is no longer needed since we want to show what was searched even if 0 lines found
+  const possibleLines = results
+    ? results.filter((l) => l.isPossible && !l.isNotFound && !l.isError)
+    : [];
+  const errorLines = results ? results.filter((l) => l.isError) : [];
+  const notFoundLines = results ? results.filter((l) => l.isNotFound) : [];
+
+  const filterTabs: { key: FilterTab; label: string; count: number }[] = [
+    { key: "all", label: "Todos", count: results?.length ?? 0 },
+    { key: "confirmed", label: "Confirmados", count: confirmedLines.length },
+    { key: "possible", label: "Posibles", count: possibleLines.length },
+    { key: "errors", label: "Errores", count: errorLines.length },
+  ];
+
+  const getActiveResults = () => {
+    let base: DisplayLine[];
+    switch (activeFilter) {
+      case "confirmed":
+        base = [...confirmedLines, ...notFoundLines];
+        break;
+      case "possible":
+        base = possibleLines;
+        break;
+      case "errors":
+        base = errorLines;
+        break;
+      default:
+        base = results ?? [];
+    }
+    if (!searchQuery) return base;
+    const q = searchQuery.toLowerCase();
+    return base.filter(
+      (l) =>
+        l.operadora.toLowerCase().includes(q) ||
+        l.numero.toLowerCase().includes(q),
+    );
+  };
+
+  const activeResults = getActiveResults();
+
+  // Split visible vs collapsed "sin registro"
+  const visibleResults =
+    activeFilter === "all"
+      ? activeResults.filter((l) => !l.isNotFound)
+      : activeResults;
+  const collapsedNotFound = activeFilter === "all" ? notFoundLines : [];
+
+  // Estimated total providers (rough constant — update if provider count changes)
+  const TOTAL_PROVIDERS = 104;
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 selection:bg-zinc-900 selection:text-white font-sans">
+      {/* Accessible live region for streaming updates */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {liveMessage}
+      </div>
+
+      {/* Report/ARCO Dialog */}
+      <AnimatePresence>
+        {reportTarget && (
+          <ReportDialog
+            operadora={reportTarget}
+            onClose={() => setReportTarget(null)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Navigation */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-zinc-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
@@ -613,6 +798,8 @@ export default function MisLineas() {
             type="button"
             className="md:hidden p-2 text-zinc-600 hover:bg-zinc-100 rounded-md transition-colors"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-expanded={isMenuOpen}
+            aria-label="Menú"
           >
             {isMenuOpen ? (
               <X className="w-5 h-5" />
@@ -712,7 +899,7 @@ export default function MisLineas() {
                       autoCapitalize="characters"
                       placeholder="Ej. XXXX000000XXXXXX00"
                       className={cn(
-                        "w-full bg-zinc-50 border border-zinc-200 px-4 py-3 rounded-xl text-base outline-none transition-all placeholder:text-zinc-400",
+                        "w-full bg-zinc-50 border border-zinc-200 px-4 py-3 pr-24 rounded-xl text-base outline-none transition-all placeholder:text-zinc-400",
                         "focus:border-black focus:ring-1 focus:ring-black",
                         "font-mono uppercase",
                         curpValidationError
@@ -730,25 +917,50 @@ export default function MisLineas() {
                       }
                       maxLength={18}
                       disabled={loading}
+                      aria-describedby={
+                        curpValidationError ? "curp-error" : undefined
+                      }
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                      {curpIsValid && (
-                        <span className="px-1">
-                          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                        </span>
+                      {/* Character counter */}
+                      <span
+                        className={cn(
+                          "text-xs font-mono font-medium tabular-nums transition-colors",
+                          curpCountColor,
+                        )}
+                        aria-label={`${curp.length} de 18 caracteres`}
+                      >
+                        {curp.length}/18
+                      </span>
+                      {/* Clear button */}
+                      {curp.length > 0 && !loading && (
+                        <button
+                          type="button"
+                          onClick={() => setCurp("")}
+                          className="p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200/50 rounded-lg transition-colors"
+                          aria-label="Limpiar CURP"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
                       )}
+                      {/* Paste button */}
                       <button
                         type="button"
                         onClick={handlePasteCurp}
                         className="p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200/50 rounded-lg transition-colors"
                         title="Pegar desde el portapapeles"
+                        aria-label="Pegar CURP desde portapapeles"
                       >
                         <ClipboardPaste className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
                   {curpValidationError && (
-                    <p className="text-xs text-red-600 font-medium">
+                    <p
+                      id="curp-error"
+                      className="text-xs text-red-600 font-medium"
+                      role="alert"
+                    >
                       {curpValidationError}
                     </p>
                   )}
@@ -773,11 +985,17 @@ export default function MisLineas() {
                       Búsquedas recientes:
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {history.map((h, i) => (
+                      {history.map((h) => (
                         <button
                           key={h}
                           type="button"
                           onClick={() => setCurp(h)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setCurp(h);
+                            }
+                          }}
                           className="text-xs font-mono px-2.5 py-1 bg-zinc-100/80 text-zinc-600 border border-zinc-200 rounded-lg hover:bg-zinc-200 hover:text-zinc-900 transition-colors"
                         >
                           {h}
@@ -808,7 +1026,11 @@ export default function MisLineas() {
 
               {/* Errors */}
               {(error || timedOut) && (
-                <div className="mt-4 flex gap-3 text-sm text-red-600 bg-red-50 p-4 rounded-xl border border-red-100">
+                <div
+                  className="mt-4 flex gap-3 text-sm text-red-600 bg-red-50 p-4 rounded-xl border border-red-100"
+                  role="alert"
+                  aria-live="polite"
+                >
                   <AlertCircle className="w-5 h-5 shrink-0" />
                   <div>
                     <p>
@@ -881,7 +1103,7 @@ export default function MisLineas() {
                   animate={{ opacity: 1 }}
                   className="h-full min-h-[400px] border border-dashed border-zinc-300 bg-zinc-50/50 rounded-2xl flex flex-col p-8 justify-center items-center text-center"
                 >
-                  <div className="w-12 h-12 bg-white rounded-full border border-zinc-200 flex items-center justify-center justify-center mb-4 shadow-sm">
+                  <div className="w-12 h-12 bg-white rounded-full border border-zinc-200 flex items-center justify-center mb-4 shadow-sm">
                     <History className="w-5 h-5 text-zinc-400" />
                   </div>
                   <h3 className="font-semibold text-zinc-900 text-lg mb-1">
@@ -913,7 +1135,7 @@ export default function MisLineas() {
                     ))}
                   </div>
                 </motion.div>
-              ) : results ? (
+              ) : results !== null ? (
                 <motion.div
                   key="results"
                   initial={{ opacity: 0, y: 10 }}
@@ -952,6 +1174,30 @@ export default function MisLineas() {
                       </button>
                     </div>
 
+                    {/* Progress bar during loading */}
+                    {loading && (
+                      <div className="mb-4">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs text-zinc-500 font-medium">
+                            Escaneando proveedores...
+                          </span>
+                          <span className="text-xs font-mono font-semibold text-zinc-700">
+                            {scannedCount}/{TOTAL_PROVIDERS}
+                          </span>
+                        </div>
+                        <div className="h-1.5 bg-zinc-100 rounded-full overflow-hidden">
+                          <motion.div
+                            className="h-full bg-zinc-900 rounded-full"
+                            initial={{ width: 0 }}
+                            animate={{
+                              width: `${Math.min((scannedCount / TOTAL_PROVIDERS) * 100, 100)}%`,
+                            }}
+                            transition={{ ease: "easeOut", duration: 0.3 }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-zinc-50 border border-zinc-200 p-4 rounded-xl flex items-center justify-between">
                         <div>
@@ -983,6 +1229,47 @@ export default function MisLineas() {
                     </div>
                   </div>
 
+                  {/* Filter Tabs */}
+                  <div
+                    className="flex gap-2 flex-wrap"
+                    role="tablist"
+                    aria-label="Filtrar resultados"
+                  >
+                    {filterTabs.map((tab) => (
+                      <button
+                        key={tab.key}
+                        type="button"
+                        role="tab"
+                        aria-selected={activeFilter === tab.key}
+                        onClick={() => setActiveFilter(tab.key)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setActiveFilter(tab.key);
+                          }
+                        }}
+                        className={cn(
+                          "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
+                          activeFilter === tab.key
+                            ? "bg-zinc-900 text-white border-zinc-900"
+                            : "bg-white text-zinc-600 border-zinc-200 hover:border-zinc-400 hover:text-zinc-900",
+                        )}
+                      >
+                        {tab.label}
+                        <span
+                          className={cn(
+                            "text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded-full",
+                            activeFilter === tab.key
+                              ? "bg-white/20 text-white"
+                              : "bg-zinc-100 text-zinc-500",
+                          )}
+                        >
+                          {tab.count}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+
                   {/* Search Bar */}
                   <div className="relative">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
@@ -994,97 +1281,188 @@ export default function MisLineas() {
                       className="w-full bg-white border border-zinc-200 px-10 py-3 rounded-xl text-sm outline-none transition-all placeholder:text-zinc-400 focus:border-black focus:ring-1 focus:ring-black shadow-sm"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-medium text-zinc-400 bg-zinc-100 px-2 py-1 rounded-md">
-                      {filteredResults.length} de {results.length} resultados
+                      {activeResults.length} resultados
                     </span>
                   </div>
 
                   {/* List of lines */}
                   <div className="space-y-3 max-h-[650px] overflow-y-auto pr-2 custom-scrollbar">
-                    {filteredResults.length === 0 ? (
+                    {/* Skeleton during initial streaming */}
+                    {loading && visibleResults.length === 0 && (
+                      <div className="space-y-3">
+                        <SkeletonCard />
+                        <SkeletonCard />
+                        <SkeletonCard />
+                      </div>
+                    )}
+
+                    {!loading && activeResults.length === 0 ? (
                       <div className="bg-white border border-zinc-200 p-8 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm">
                         <Search className="w-8 h-8 text-zinc-300 mb-3" />
                         <p className="text-sm font-medium text-zinc-900">
                           Sin coincidencias
                         </p>
                         <p className="text-xs text-zinc-500 mt-1">
-                          No hay resultados para "{searchQuery}"
+                          {searchQuery
+                            ? `No hay resultados para "${searchQuery}"`
+                            : "No hay resultados en esta categoría"}
                         </p>
                       </div>
                     ) : (
-                      filteredResults.map((linea, idx) => {
-                        const website = !linea.isPossible
-                          ? getProviderWebsite(linea.operadora)
-                          : null;
-                        return (
-                          <motion.div
-                            key={linea.id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: idx * 0.05 }}
-                            className="bg-white border border-zinc-200 shadow-sm p-4 sm:p-5 rounded-2xl flex items-center justify-between gap-4"
-                          >
-                            <div className="flex items-center gap-4 min-w-0">
-                              <div className="w-10 h-10 bg-zinc-100 rounded-full flex items-center justify-center shrink-0">
-                                <Phone className="w-5 h-5 text-zinc-500" />
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2 mb-0.5">
-                                  <span className="font-semibold text-zinc-900">
-                                    {linea.operadora}
-                                  </span>
-                                  {linea.isPossible ? (
-                                    <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium">
-                                      Posible
-                                    </span>
-                                  ) : linea.isNotFound ? (
-                                    <span className="text-[10px] bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-full font-medium">
-                                      No encontrada
-                                    </span>
-                                  ) : linea.isError ? (
-                                    <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">
-                                      Error
-                                    </span>
-                                  ) : (
-                                    <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-medium">
-                                      Registrada
-                                    </span>
+                      <>
+                        <AnimatePresence initial={false}>
+                          {visibleResults.map((linea, idx) => {
+                            const isConfirmed =
+                              !linea.isPossible &&
+                              !linea.isNotFound &&
+                              !linea.isError &&
+                              linea.numero !== "Número no confirmado";
+                            const website = isConfirmed
+                              ? getProviderWebsite(linea.operadora)
+                              : null;
+                            return (
+                              <motion.div
+                                key={linea.id}
+                                initial={{ opacity: 0, y: 12 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -8 }}
+                                transition={{
+                                  duration: 0.22,
+                                  delay: Math.min(idx * 0.04, 0.3),
+                                }}
+                                className="bg-white border border-zinc-200 shadow-sm p-4 sm:p-5 rounded-2xl flex items-center justify-between gap-4"
+                              >
+                                <div className="flex items-center gap-4 min-w-0">
+                                  <div className="w-10 h-10 bg-zinc-100 rounded-full flex items-center justify-center shrink-0">
+                                    <Phone className="w-5 h-5 text-zinc-500" />
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                      <span className="font-semibold text-zinc-900">
+                                        {linea.operadora}
+                                      </span>
+                                      {linea.isPossible ? (
+                                        <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium">
+                                          Posible
+                                        </span>
+                                      ) : linea.isNotFound ? (
+                                        <span className="text-[10px] bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-full font-medium">
+                                          No encontrada
+                                        </span>
+                                      ) : linea.isError ? (
+                                        <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">
+                                          Error
+                                        </span>
+                                      ) : (
+                                        <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-medium">
+                                          Registrada
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p
+                                      className={cn(
+                                        "font-mono text-base text-zinc-600",
+                                        linea.numero ===
+                                          "Número no confirmado" &&
+                                          "italic text-sm text-zinc-400",
+                                        (linea.isNotFound || linea.isError) &&
+                                          "italic text-sm text-zinc-400",
+                                      )}
+                                    >
+                                      {linea.numero}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-1 shrink-0">
+                                  {isConfirmed && (
+                                    <CopyButton text={linea.numero} />
+                                  )}
+                                  {/* Report/ARCO button for confirmed & possible lines */}
+                                  {(isConfirmed || linea.isPossible) && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setReportTarget(linea.operadora)
+                                      }
+                                      className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                                      aria-label={`Desconocer línea de ${linea.operadora}`}
+                                      title="Desconocer / Derechos ARCO"
+                                    >
+                                      <Flag className="w-4 h-4" />
+                                    </button>
+                                  )}
+                                  {website && isConfirmed && (
+                                    <a
+                                      href={website}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="p-2 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
+                                      aria-label={`Ir al sitio de ${linea.operadora}`}
+                                    >
+                                      <ExternalLink className="w-4 h-4" />
+                                    </a>
                                   )}
                                 </div>
-                                <p
-                                  className={cn(
-                                    "font-mono text-base text-zinc-600",
-                                    linea.numero === "Número no confirmado" &&
-                                      "italic text-sm text-zinc-400",
-                                    (linea.isNotFound || linea.isError) &&
-                                      "italic text-sm text-zinc-400",
-                                  )}
-                                >
-                                  {linea.numero}
-                                </p>
-                              </div>
-                            </div>
+                              </motion.div>
+                            );
+                          })}
+                        </AnimatePresence>
 
-                            <div className="flex items-center gap-2 shrink-0">
-                              {!linea.isPossible &&
-                                !linea.isNotFound &&
-                                !linea.isError &&
-                                linea.numero !== "Número no confirmado" && (
-                                  <CopyButton text={linea.numero} />
-                                )}
-                              {website && (
-                                <a
-                                  href={website}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="p-2 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
+                        {/* Collapsed "Sin Registro" accordion */}
+                        {activeFilter === "all" &&
+                          collapsedNotFound.length > 0 && (
+                            <div className="border border-zinc-200 rounded-2xl overflow-hidden bg-white shadow-sm">
+                              <button
+                                type="button"
+                                onClick={() => setNotFoundExpanded((v) => !v)}
+                                className="w-full flex items-center justify-between px-5 py-4 text-sm font-medium text-zinc-600 hover:bg-zinc-50 transition-colors"
+                                aria-expanded={notFoundExpanded}
+                              >
+                                <span>
+                                  {collapsedNotFound.length} operadora
+                                  {collapsedNotFound.length !== 1 ? "s" : ""}{" "}
+                                  sin líneas registradas
+                                </span>
+                                <motion.span
+                                  animate={{
+                                    rotate: notFoundExpanded ? 180 : 0,
+                                  }}
+                                  transition={{ duration: 0.2 }}
                                 >
-                                  <ExternalLink className="w-4 h-4" />
-                                </a>
-                              )}
+                                  <ChevronDown className="w-4 h-4" />
+                                </motion.span>
+                              </button>
+                              <AnimatePresence>
+                                {notFoundExpanded && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.25 }}
+                                    className="overflow-hidden"
+                                  >
+                                    <div className="px-5 pb-4 space-y-2 max-h-72 overflow-y-auto">
+                                      {collapsedNotFound.map((linea) => (
+                                        <div
+                                          key={linea.id}
+                                          className="flex items-center justify-between py-2 border-b border-zinc-100 last:border-0"
+                                        >
+                                          <span className="text-sm text-zinc-600">
+                                            {linea.operadora}
+                                          </span>
+                                          <span className="text-xs text-zinc-400 italic">
+                                            Sin registro
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
                             </div>
-                          </motion.div>
-                        );
-                      })
+                          )}
+                      </>
                     )}
                   </div>
                 </motion.div>
