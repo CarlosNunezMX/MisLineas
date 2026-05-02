@@ -227,7 +227,9 @@ function transformApiResponse(responses: ProviderResponse[]): DisplayLine[] {
       result.possibleProviders &&
       result.possibleProviders.length > 0;
     const isRegisteredWithoutLinesOrPossible =
-      result.isRegistered && !hasLines && !(result.possibleProviders && result.possibleProviders.length > 0);
+      result.isRegistered &&
+      !hasLines &&
+      !(result.possibleProviders && result.possibleProviders.length > 0);
 
     if (!hasLines && !hasPossible && !isRegisteredWithoutLinesOrPossible) {
       if (result.possibleProviders && result.possibleProviders.length > 0) {
@@ -252,7 +254,8 @@ function transformApiResponse(responses: ProviderResponse[]): DisplayLine[] {
 
     for (const lineStr of result.lines ?? []) {
       const colonIdx = lineStr.indexOf(": ");
-      const isAltanMVNO = result.company === "Red Altan (MVNOs)" && colonIdx !== -1;
+      const isAltanMVNO =
+        result.company === "Red Altan (MVNOs)" && colonIdx !== -1;
       const operadora = isAltanMVNO
         ? lineStr.slice(0, colonIdx)
         : result.company;
@@ -346,7 +349,7 @@ const WHY_CARDS = [
   {
     icon: Zap,
     title: "Un solo lugar",
-    body: "Antes debías visitar múltiples sitios distintos. Hoy solo necesitas tu CURP.",
+    body: "Antes tenías que buscar en más de 100 sitios web diferentes. Hoy solo necesitas ingresar tu CURP aquí.",
   },
   {
     icon: Scale,
@@ -668,6 +671,17 @@ export default function MisLineas() {
           {/* Left Column */}
           <div className="lg:col-span-5 space-y-8">
             <div className="space-y-4">
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/5 border border-black/10 text-xs font-medium text-zinc-700 shadow-sm"
+              >
+                <Search className="w-3.5 h-3.5" />
+                <span>
+                  Antes buscabas en +100 sitios, ahora{" "}
+                  <strong>solo en uno</strong>.
+                </span>
+              </motion.div>
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-zinc-900 leading-tight">
                 El control de tu{" "}
                 <span className="text-zinc-500">identidad móvil</span>{" "}
