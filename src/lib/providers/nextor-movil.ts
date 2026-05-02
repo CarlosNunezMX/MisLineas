@@ -55,9 +55,9 @@ export async function lookupCURPINNextorMovil(
   );
 
   if (!validationResponse.ok) {
+    const errorBody = await validationResponse.text().catch(() => "(unreadable)");
     console.error(
-      "Failed to validate CURP with Nextor Movil:",
-      validationResponse.statusText,
+      `Failed to validate CURP with Nextor Movil: ${validationResponse.status} ${validationResponse.statusText} — body: ${errorBody}`,
     );
 
     return {

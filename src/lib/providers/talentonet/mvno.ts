@@ -23,9 +23,9 @@ export async function loookupCURPInTalentoNetMVNO(
   }
 
   if (!validationResponse.ok) {
+    const errorBody = await validationResponse.text().catch(() => "(unreadable)");
     console.error(
-      "Failed to validate CURP with Newww:",
-      validationResponse.statusText,
+      `Failed to validate CURP with Newww: ${validationResponse.status} ${validationResponse.statusText} — body: ${errorBody}`,
     );
 
     return {

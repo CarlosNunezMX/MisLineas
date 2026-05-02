@@ -119,17 +119,20 @@ export async function POST(req: NextRequest) {
           .lookupFunction(curp)
           .then(
             (result) => ({ provider: p.provider, result }),
-            (error) => ({
-              provider: p.provider,
-              result: {
-                company: p.provider,
-                lines: [],
-                error: `Lookup failed: ${error.message}`,
-              },
-            }),
+            (error) => {
+              console.error(`Lookup failed for ${p.provider}:`, error);
+              return {
+                provider: p.provider,
+                result: {
+                  company: p.provider,
+                  lines: [],
+                  error: `Lookup failed: ${error.message}`,
+                },
+              };
+            },
           )
           .catch((error) => {
-            console.error(`Error looking up CURP in ${p.provider}:`, error);
+            console.error(`Unexpected error looking up CURP in ${p.provider}:`, error);
             return {
               provider: p.provider,
               result: {
