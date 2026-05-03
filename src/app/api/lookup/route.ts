@@ -65,10 +65,11 @@ const providers: Array<{
   //   provider: "MoBig",
   //   lookupFunction: lookupCURPINMobig,
   // },
-  {
-    provider: "Nextor Movil",
-    lookupFunction: lookupCURPINNextorMovil,
-  },
+  // {
+  //   provider: "Nextor Movil",
+  //   lookupFunction: lookupCURPINNextorMovil,
+  //   // Disabled: rate limit
+  // },
   // {
   //   provider: "Sorcel",
   //   lookupFunction: lookupCURPInSorcel,

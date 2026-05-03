@@ -111,13 +111,15 @@ export async function lookupCURPInATT(curp: string): Promise<LineResult> {
   const data = validationData.data;
 
   if (data.countLines > 0) {
-    console.log(
-      "[att] registered response:",
-      JSON.stringify(validationData, null, 2),
-    );
+    const lines: string[] =
+      data.customerInfo?.associatedLines
+        ?.map((l: { phoneNumber?: string }) => l.phoneNumber)
+        .filter((p: string | undefined): p is string => Boolean(p))
+        .map((p: string) => `******${p.slice(-4)}`) ?? [];
+
     return {
       company: "AT&T",
-      lines: [],
+      lines,
       isRegistered: true,
       rawApiResponse: validationData,
     };
