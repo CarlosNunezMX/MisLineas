@@ -25,11 +25,16 @@ export async function lookupCURPInLogisticaACN(
   const validationData = await validationResponse.json();
 
   if (validationData.length > 0) {
-    console.log("[logisticaacn] registered response:", JSON.stringify(validationData, null, 2));
+    const lines: string[] = (
+      validationData as { marca?: string; dn?: string }[]
+    )
+      .filter((e) => e.dn)
+      .map((e) => `${e.marca ?? "Logistica ACN"}: ******${e.dn!.slice(-4)}`);
+
     return {
       company: "Logistica ACN",
       possibleProviders: possibleProviders,
-      lines: [],
+      lines,
       isRegistered: true,
       rawApiResponse: validationData,
     };

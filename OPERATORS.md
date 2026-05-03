@@ -84,7 +84,7 @@
 - [x] Starline — https://rnu.altanredes.com/consulta  
 - [x] Telcel — https://registro.telcel.com/vinculatulinea  
 - [x] Telefónica Luna — https://rnu.altanredes.com/consulta  
-- [ ] Teléfonica Movistar — https://www.movistar.com.mx/consulta-tu-linea  
+- [ ] Teléfonica Movistar — https://www.movistar.com.mx/consulta-tu-linea  (Pide documentos para verificar la identidad)
 - [x] Telgen — https://rnu.altanredes.com/consulta  
 - [x] Telmovil — https://rnu.altanredes.com/consulta  
 - [x] Teracel — https://rnu.altanredes.com/consulta  

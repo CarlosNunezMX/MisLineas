@@ -28,6 +28,7 @@ import {
   UserCheck,
   Wifi,
   X,
+  XCircle,
   Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -258,12 +259,11 @@ function transformApiResponse(responses: ProviderResponse[]): DisplayLine[] {
 
     for (const lineStr of result.lines ?? []) {
       const colonIdx = lineStr.indexOf(": ");
-      const isAltanMVNO =
-        result.company === "Red Altan (MVNOs)" && colonIdx !== -1;
-      const operadora = isAltanMVNO
+      const hasBrandPrefix = colonIdx !== -1;
+      const operadora = hasBrandPrefix
         ? lineStr.slice(0, colonIdx)
         : result.company;
-      const numero = isAltanMVNO ? lineStr.slice(colonIdx + 2) : lineStr;
+      const numero = hasBrandPrefix ? lineStr.slice(colonIdx + 2) : lineStr;
       lines.push({
         id: `${provider}-confirmed-${lineStr}`,
         operadora,
@@ -364,6 +364,173 @@ const WHY_CARDS = [
     title: "Transparencia Total",
     body: "No somos una operadora ni vendemos planes. Solo devolvemos la información a su dueño: el ciudadano.",
   },
+];
+
+type OperatorStatus = "supported" | "paused" | "pending" | "verify";
+type OperatorDisplayStatus = "supported" | "unsupported" | "pending";
+
+type OperatorEntry = {
+  name: string;
+  status: OperatorStatus;
+  reason?: string;
+};
+
+const OPERATOR_STATUS_LABELS: Record<OperatorDisplayStatus, string> = {
+  supported: "Soportada",
+  unsupported: "No soportada",
+  pending: "Pendiente",
+};
+
+const OPERATOR_STATUS_STYLES: Record<OperatorDisplayStatus, string> = {
+  supported: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  unsupported: "bg-rose-50 text-rose-700 border-rose-200",
+  pending: "bg-amber-50 text-amber-700 border-amber-200",
+};
+
+function getOperatorDisplayStatus(
+  operator: OperatorEntry,
+): OperatorDisplayStatus {
+  if (operator.status === "supported") return "supported";
+  if (!operator.reason) return "pending";
+  if (operator.reason.toLowerCase().includes("no integrado")) {
+    return "pending";
+  }
+  return "unsupported";
+}
+
+const OPERATORS: OperatorEntry[] = [
+  { name: "2y2x", status: "supported" },
+  { name: "Abafon", status: "supported" },
+  { name: "Abib", status: "supported" },
+  { name: "Abix", status: "supported" },
+  { name: "Addinteli", status: "supported" },
+  { name: "AhorroCel", status: "pending", reason: "No integrado aun." },
+  { name: "AI Telecomm", status: "supported" },
+  { name: "ALLCE", status: "pending", reason: "No integrado aun." },
+  { name: "AT&T / Unefon / WIM", status: "supported" },
+  { name: "Bait", status: "supported" },
+  { name: "Beneleit Móvil", status: "paused", reason: "En pausa." },
+  { name: "Bestel", status: "paused", reason: "En pausa." },
+  { name: "BienCel", status: "supported" },
+  { name: "Bigcel", status: "supported" },
+  { name: "Bromovil", status: "supported" },
+  { name: "Cablecom", status: "pending", reason: "No integrado aun." },
+  { name: "CFE", status: "supported" },
+  { name: "Chedraui Móvil", status: "pending", reason: "No integrado aun." },
+  { name: "Chip Macropay", status: "supported" },
+  { name: "CoolMobile", status: "supported" },
+  { name: "Comunicaciones Green", status: "supported" },
+  { name: "Conect2", status: "supported" },
+  { name: "Dalefon", status: "pending", reason: "No integrado aun." },
+  { name: "Dialo", status: "supported" },
+  { name: "Diri Móvil", status: "supported" },
+  { name: "Dua", status: "supported" },
+  { name: "ENI Networks", status: "supported" },
+  { name: "Fangio Mobile", status: "supported" },
+  { name: "Fedego!", status: "supported" },
+  { name: "Fibracell", status: "supported" },
+  { name: "Flash Mobile", status: "supported" },
+  { name: "FRC Mobile", status: "supported" },
+  { name: "Freedompop", status: "pending", reason: "No integrado aun." },
+  { name: "Gamers", status: "supported" },
+  { name: "Gane", status: "supported" },
+  { name: "Glovo Telecom", status: "supported" },
+  { name: "Gmovil", status: "supported" },
+  { name: "Grupo Inten", status: "supported" },
+  { name: "Hashtag", status: "supported" },
+  { name: "I AM Abundance", status: "supported" },
+  { name: "IENTC", status: "supported" },
+  { name: "Interlinked", status: "supported" },
+  { name: "Inxel", status: "supported" },
+  { name: "Iusatel", status: "supported" },
+  { name: "Izzi", status: "pending", reason: "No integrado aun." },
+  { name: "Link Móvil", status: "supported" },
+  { name: "Kolors Mobile", status: "supported" },
+  { name: "Maifon", status: "supported" },
+  {
+    name: "Mega Móvil",
+    status: "paused",
+    reason: "WAF bloquea peticiones desde servidor.",
+  },
+  { name: "México Móvil", status: "supported" },
+  { name: "Mexfon", status: "supported" },
+  { name: "Mi móvil", status: "pending", reason: "No integrado aun." },
+  { name: "Mirlo", status: "supported" },
+  { name: "MoBig", status: "verify", reason: "Falta verificar." },
+  { name: "Mosi", status: "pending", reason: "No integrado aun." },
+  { name: "MobileArionet", status: "supported" },
+  { name: "Movired", status: "supported" },
+  { name: "Móvil para Todos", status: "supported" },
+  { name: "Nabi", status: "supported" },
+  { name: "Netmas", status: "supported" },
+  {
+    name: "Newww",
+    status: "paused",
+    reason: "ConnectTimeoutError en sus servidores.",
+  },
+  {
+    name: "Nextor Movil",
+    status: "paused",
+    reason: "Rate limit agresivo.",
+  },
+  { name: "On-Link", status: "supported" },
+  { name: "OUI", status: "pending", reason: "No integrado aun." },
+  { name: "Othisi Mobile", status: "supported" },
+  { name: "Oxio", status: "pending", reason: "No integrado aun." },
+  { name: "OXXO CEL", status: "pending", reason: "No integrado aun." },
+  { name: "PilloFon", status: "supported" },
+  { name: "Playcell", status: "supported" },
+  {
+    name: "Red Aguila",
+    status: "paused",
+    reason: "ConnectTimeoutError en sus servidores.",
+  },
+  { name: "Red Blak", status: "supported" },
+  { name: "Red Dog", status: "supported" },
+  { name: "Red Potencia", status: "supported" },
+  { name: "Redphone", status: "pending", reason: "No integrado aun." },
+  { name: "Redicoppel", status: "supported" },
+  { name: "Retemex", status: "supported" },
+  { name: "RETESEC", status: "supported" },
+  { name: "Rincel", status: "supported" },
+  { name: "Secure Witness", status: "supported" },
+  { name: "Sfon", status: "supported" },
+  { name: "Sky", status: "pending", reason: "No integrado aun." },
+  {
+    name: "Sorcel",
+    status: "paused",
+    reason: "Cloudflare JS challenge bloquea.",
+  },
+  { name: "Spot 1", status: "supported" },
+  { name: "Starline", status: "supported" },
+  { name: "Telcel", status: "supported" },
+  { name: "Telefónica Luna", status: "supported" },
+  { name: "Telgen", status: "supported" },
+  { name: "Telmovil", status: "supported" },
+  { name: "Teracel", status: "supported" },
+  { name: "TIC-OMV", status: "supported" },
+  {
+    name: "Telefónica Movistar",
+    status: "pending",
+    reason: "Pide documentos oficiales para verificar identidad.",
+  },
+  { name: "Tokamóvil", status: "pending", reason: "No integrado aun." },
+  { name: "Tuis", status: "supported" },
+  { name: "TurboCel", status: "supported" },
+  { name: "Turbored", status: "supported" },
+  { name: "Uber Cel", status: "pending", reason: "No integrado aun." },
+  { name: "Ultracel", status: "supported" },
+  { name: "Vasanta", status: "supported" },
+  { name: "Viral Cel", status: "pending", reason: "No integrado aun." },
+  { name: "Virgin Mobile", status: "supported" },
+  { name: "VivaMX", status: "supported" },
+  { name: "Weex", status: "supported" },
+  { name: "Wiicel", status: "pending", reason: "No integrado aun." },
+  { name: "Wiki Katat", status: "supported" },
+  { name: "Wimotelecom", status: "supported" },
+  { name: "Yo mobile", status: "verify", reason: "Falta verificar." },
+  { name: "Yobi Telecom", status: "pending", reason: "No integrado aun." },
+  { name: "Yu Movil", status: "pending", reason: "No integrado aun." },
 ];
 
 const QUERY_TIMEOUT_MS = 15000;
@@ -524,6 +691,7 @@ export default function MisLineas() {
   const [history, setHistory] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
+  const [operatorQuery, setOperatorQuery] = useState("");
   const [notFoundExpanded, setNotFoundExpanded] = useState(false);
   const [reportTarget, setReportTarget] = useState<string | null>(null);
   const [scannedCount, setScannedCount] = useState(0);
@@ -560,6 +728,28 @@ export default function MisLineas() {
       : curp.length === 18
         ? "text-red-500"
         : "text-zinc-400";
+  const operatorQueryNormalized = operatorQuery.trim().toLowerCase();
+  const filteredOperators = OPERATORS.filter((operator) => {
+    if (!operatorQueryNormalized) return true;
+    const displayStatus = getOperatorDisplayStatus(operator);
+    const statusLabel = OPERATOR_STATUS_LABELS[displayStatus].toLowerCase();
+    return (
+      operator.name.toLowerCase().includes(operatorQueryNormalized) ||
+      statusLabel.includes(operatorQueryNormalized)
+    );
+  }).sort((a, b) => a.name.localeCompare(b.name, "es"));
+  const operatorCounts = OPERATORS.reduce(
+    (acc, operator) => {
+      const displayStatus = getOperatorDisplayStatus(operator);
+      acc[displayStatus] += 1;
+      return acc;
+    },
+    {
+      supported: 0,
+      unsupported: 0,
+      pending: 0,
+    } as Record<OperatorDisplayStatus, number>,
+  );
 
   const handlePasteCurp = async () => {
     try {
@@ -1473,6 +1663,100 @@ export default function MisLineas() {
 
         {/* Explain sections */}
         <div className="mt-20 space-y-16">
+          {/* Estado de Operadoras */}
+          <section id="operadoras" className="scroll-mt-24 space-y-6">
+            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+              <div className="max-w-2xl">
+                <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 mb-2">
+                  Estado de Operadoras
+                </h2>
+                <p className="text-zinc-600">
+                  Listado completo y actualizado de operadoras con su estado de
+                  integracion.
+                </p>
+              </div>
+              <div className="w-full lg:w-80">
+                <label
+                  htmlFor="operator-search"
+                  className="text-xs font-semibold text-zinc-500 uppercase tracking-wide"
+                >
+                  Buscar operadora
+                </label>
+                <div className="relative mt-2">
+                  <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    id="operator-search"
+                    type="text"
+                    value={operatorQuery}
+                    onChange={(e) => setOperatorQuery(e.target.value)}
+                    placeholder="Nombre o estado"
+                    className="w-full pl-10 pr-3 py-2 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-black/10"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2 text-xs">
+              <span className="px-2.5 py-1 rounded-full border bg-zinc-50 text-zinc-700">
+                Total: {OPERATORS.length}
+              </span>
+              <span
+                className={`px-2.5 py-1 rounded-full border ${OPERATOR_STATUS_STYLES.supported}`}
+              >
+                Soportadas: {operatorCounts.supported}
+              </span>
+              <span
+                className={`px-2.5 py-1 rounded-full border ${OPERATOR_STATUS_STYLES.unsupported}`}
+              >
+                No soportadas: {operatorCounts.unsupported}
+              </span>
+              <span
+                className={`px-2.5 py-1 rounded-full border ${OPERATOR_STATUS_STYLES.pending}`}
+              >
+                Pendientes: {operatorCounts.pending}
+              </span>
+            </div>
+
+            <div className="rounded-2xl border border-zinc-200 bg-white p-2 sm:p-3">
+              <div className="max-h-[520px] overflow-y-auto pr-1">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {filteredOperators.map((operator) => {
+                    const displayStatus = getOperatorDisplayStatus(operator);
+                    return (
+                      <div
+                        key={operator.name}
+                        className="border border-zinc-200 rounded-xl p-3 hover:border-zinc-300 transition-colors"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1">
+                            <h3 className="text-sm font-semibold text-zinc-900">
+                              {operator.name}
+                            </h3>
+                            {operator.reason ? (
+                              <p className="text-xs text-zinc-500 mt-1">
+                                {operator.reason}
+                              </p>
+                            ) : null}
+                          </div>
+                          <span
+                            className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${OPERATOR_STATUS_STYLES[displayStatus]}`}
+                          >
+                            {OPERATOR_STATUS_LABELS[displayStatus]}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {filteredOperators.length === 0 ? (
+                  <p className="text-sm text-zinc-500 text-center py-8">
+                    No hay resultados con esa busqueda.
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          </section>
+
           <section className="grid sm:grid-cols-3 gap-6">
             <div className="sm:col-span-3 mb-2">
               <h2 className="text-2xl font-bold text-zinc-900">
@@ -1514,10 +1798,12 @@ export default function MisLineas() {
                 </p>
                 <ul className="space-y-3">
                   {[
-                    "Cifrado AES-256 de extremo a extremo.",
+                    "Conexiones cifradas en tránsito (TLS/HTTPS).",
                     "Sesión destruida automáticamente.",
+                    "No guardamos datos personales ni historiales.",
                     "No almacenamos CURP ni números.",
                     "Cumplimiento de privacidad.",
+                    "Proyecto open source y auditable.",
                   ].map((item) => (
                     <li
                       key={item}
@@ -1528,6 +1814,19 @@ export default function MisLineas() {
                     </li>
                   ))}
                 </ul>
+                <p className="text-sm text-zinc-400 mt-6">
+                  Puedes revisar el código y validar cómo operamos en nuestro
+                  repositorio público de GitHub:{" "}
+                  <a
+                    href="https://github.com/moraxh/MisLineas"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-zinc-200 underline underline-offset-4 hover:text-white transition-colors"
+                  >
+                    github.com/moraxh/MisLineas
+                  </a>
+                  .
+                </p>
               </div>
               <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl">
                 <div className="flex justify-between items-center text-xs font-mono text-zinc-500 mb-4 pb-4 border-b border-zinc-800">
