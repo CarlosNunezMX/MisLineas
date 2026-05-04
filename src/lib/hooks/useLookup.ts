@@ -1,0 +1,121 @@
+"use client";
+
+import { useRef, useState } from "react";
+import { QUERY_TIMEOUT_MS } from "@/lib/data/content";
+import { transformApiResponse } from "@/lib/lookup";
+import type { DisplayLine, ProviderResponse } from "@/types";
+
+export function useLookup(onConsult?: (curp: string) => void) {
+  const [loading, setLoading] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [results, setResults] = useState<DisplayLine[] | null>(null);
+  const [queryTime, setQueryTime] = useState<Date | null>(null);
+  const [scannedCount, setScannedCount] = useState(0);
+  const [liveMessage, setLiveMessage] = useState("");
+  const abortRef = useRef<AbortController | null>(null);
+
+  const consultar = async (curp: string) => {
+    setError(null);
+    setResults([]);
+    setTimedOut(false);
+    setLoading(true);
+    setQueryTime(null);
+    setScannedCount(0);
+    setLiveMessage("Iniciando consulta...");
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+      setTimedOut(true);
+      setLoading(false);
+    }, QUERY_TIMEOUT_MS * 2);
+
+    try {
+      onConsult?.(curp);
+      const response = await fetch("/api/lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ curp: curp.toUpperCase() }),
+        signal: controller.signal,
+      });
+
+      if (!response.body) throw new Error("No body in response");
+
+      setQueryTime(new Date());
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      const accumulated: ProviderResponse[] = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n");
+        buffer = parts.pop() || "";
+
+        for (const line of parts) {
+          if (!line.trim()) continue;
+          try {
+            const parsed = JSON.parse(line) as ProviderResponse;
+            accumulated.push(parsed);
+          } catch (e) {
+            console.error("Error parsing NDJSON chunk", line, e);
+          }
+        }
+
+        setScannedCount(accumulated.length);
+        setLiveMessage(`Escaneando proveedor ${accumulated.length}...`);
+        setResults(transformApiResponse([...accumulated]));
+      }
+
+      setLiveMessage("Consulta completada.");
+      clearTimeout(timeoutId);
+    } catch (err: unknown) {
+      clearTimeout(timeoutId);
+      if ((err as Error)?.name === "AbortError") return;
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Error de conexión. Verifica tu red.";
+      setError(msg);
+      setLiveMessage(`Error: ${msg}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const retry = () => {
+    setTimedOut(false);
+    setError(null);
+  };
+
+  const reset = () => {
+    setResults(null);
+    setQueryTime(null);
+    setError(null);
+    setTimedOut(false);
+    setScannedCount(0);
+  };
+
+  return {
+    loading,
+    timedOut,
+    error,
+    results,
+    queryTime,
+    scannedCount,
+    liveMessage,
+    consultar,
+    retry,
+    reset,
+  };
+}
+
+export type UseLookupReturn = ReturnType<typeof useLookup>;

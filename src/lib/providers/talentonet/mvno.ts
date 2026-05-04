@@ -23,7 +23,9 @@ export async function loookupCURPInTalentoNetMVNO(
   }
 
   if (!validationResponse.ok) {
-    const errorBody = await validationResponse.text().catch(() => "(unreadable)");
+    const errorBody = await validationResponse
+      .text()
+      .catch(() => "(unreadable)");
     console.error(
       `Failed to validate CURP with Newww: ${validationResponse.status} ${validationResponse.statusText} — body: ${errorBody}`,
     );
@@ -37,7 +39,10 @@ export async function loookupCURPInTalentoNetMVNO(
   }
 
   const positiveData = await validationResponse.json().catch(() => null);
-  console.log("[talentonet] registered response:", JSON.stringify(positiveData, null, 2));
+  console.log(
+    "[talentonet] registered response:",
+    JSON.stringify(positiveData, null, 2),
+  );
   return {
     company: "Newww",
     lines: [],

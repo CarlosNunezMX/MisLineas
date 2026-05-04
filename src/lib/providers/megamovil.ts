@@ -6,7 +6,9 @@ export async function lookupCURPInMegamovil(curp: string): Promise<LineResult> {
   );
 
   if (!validationResponse.ok) {
-    const errorBody = await validationResponse.text().catch(() => "(unreadable)");
+    const errorBody = await validationResponse
+      .text()
+      .catch(() => "(unreadable)");
     console.error(
       `Failed to validate CURP with Megamovil: ${validationResponse.status} ${validationResponse.statusText} — body: ${errorBody}`,
     );

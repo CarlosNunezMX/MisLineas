@@ -136,7 +136,10 @@ export async function POST(req: NextRequest) {
             },
           )
           .catch((error) => {
-            console.error(`Unexpected error looking up CURP in ${p.provider}:`, error);
+            console.error(
+              `Unexpected error looking up CURP in ${p.provider}:`,
+              error,
+            );
             return {
               provider: p.provider,
               result: {

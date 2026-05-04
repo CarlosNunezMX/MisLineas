@@ -77,7 +77,10 @@ export async function lookupCURPInIENTC(curp: string): Promise<LineResult> {
   }
 
   const positiveData = await validationResponse.json().catch(() => null);
-  console.log("[ientc] registered response:", JSON.stringify(positiveData, null, 2));
+  console.log(
+    "[ientc] registered response:",
+    JSON.stringify(positiveData, null, 2),
+  );
   return {
     company: "IENTC",
     lines: [],

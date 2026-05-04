@@ -13,7 +13,9 @@ export async function lookupCURPInSorcel(curp: string): Promise<LineResult> {
   );
 
   if (!validationResponse.ok) {
-    const errorBody = await validationResponse.text().catch(() => "(unreadable)");
+    const errorBody = await validationResponse
+      .text()
+      .catch(() => "(unreadable)");
     console.error(
       `Failed to validate CURP with Sorcel: ${validationResponse.status} ${validationResponse.statusText} — body: ${errorBody}`,
     );
