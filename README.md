@@ -1,27 +1,79 @@
-# MisLíneas
+<p align="center">
+  <img src="media/banner.png" alt="MisLíneas Banner" width="100%">
+</p>
 
-Herramienta web para consultar qué líneas telefónicas están registradas bajo tu CURP en México. Antes de esto, tenías que entrar a más de 100 portales distintos de operadoras y OMVs para saber si alguien registró líneas a tu nombre. Esta app lo hace todo en una sola consulta.
+<h1 align="center">MisLíneas</h1>
 
-## El problema que resuelve
+<p align="center">
+  Consulta qué líneas telefónicas están registradas bajo tu CURP en México.
+</p>
 
-En México cualquier persona puede registrar una línea telefónica usando el CURP de otra persona. No existe un portal centralizado del gobierno donde puedas ver todas las líneas asociadas a tu identidad. Esto se traduce en fraudes, suplantación de identidad y líneas usadas para actividades ilícitas a nombre de personas que ni siquiera saben que están registradas.
+---
 
-MisLíneas consulta en paralelo a los operadores y OMVs que exponen algún mecanismo de verificación, y te regresa los resultados conforme van llegando.
+## Sobre el proyecto
+
+En México no existe una plataforma centralizada donde una persona pueda verificar todas las líneas telefónicas asociadas a su identidad.  
+Dependiendo de la operadora, el proceso puede implicar entrar a decenas de portales distintos — o simplemente no existir de forma pública.
+
+MisLíneas nace para resolver ese problema en una sola consulta.
+
+La aplicación revisa en paralelo los mecanismos de verificación disponibles de operadores y OMVs, y muestra los resultados conforme cada proveedor responde. El objetivo es simple: permitirle a cualquier persona saber si hay líneas registradas a su nombre sin tener que navegar por más de cien sitios distintos.
+
+---
+
+## El problema
+
+Registrar una línea usando el CURP de otra persona es mucho más común de lo que debería.
+
+Eso puede terminar en:
+
+- fraude
+- robo de identidad
+- líneas utilizadas para actividades ilícitas
+- personas vinculadas a números que nunca contrataron
+
+La falta de una herramienta centralizada convierte algo básico — saber qué líneas existen a tu nombre — en un proceso fragmentado y poco transparente.
+
+MisLíneas intenta cerrar ese vacío.
+
+---
 
 ## Cobertura
 
-Telcel, AT&T y más de 80 OMVs que operan bajo Red Altan y otras redes. La lista completa con el estado de cada operador está en `OPERATORS.md`.
+Actualmente incluye soporte para:
 
-## Cómo correrlo
+- Telcel
+- AT&T
+- operadores sobre Red Altán
+- más de 80 OMVs en México
 
-Necesitas Node.js y pnpm.
+La lista completa y el estado de compatibilidad de cada operador se encuentra en [OPERATORS.md](OPERATORS.md).
+
+---
+
+## Cómo funciona
+
+Las consultas se ejecutan en paralelo utilizando `Promise.allSettled`, mientras que los resultados se transmiten como stream NDJSON para que la interfaz pueda mostrar respuestas en tiempo real sin esperar a que terminen todos los proveedores.
+
+Toda la aplicación corre del lado del cliente y no requiere infraestructura adicional ni servicios externos.
+
+---
+
+## Desarrollo
+
+Requisitos:
+
+- Node.js
+- pnpm
+
+Instalación:
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-Para producción:
+Build de producción:
 
 ```bash
 pnpm build
@@ -30,14 +82,45 @@ pnpm start
 
 No requiere variables de entorno ni API keys externas.
 
+---
+
 ## Stack
 
-Next.js con App Router, React 19, TypeScript y Tailwind CSS 4. Las consultas a proveedores corren en paralelo con `Promise.allSettled` y los resultados se transmiten como stream NDJSON para que la UI vaya mostrando resultados sin esperar a que terminen todos los proveedores.
+MisLíneas está construido con:
+
+- Next.js
+- React 19
+- TypeScript
+- Tailwind CSS 4
+
+La aplicación utiliza App Router y una arquitectura enfocada en streaming y renderizado progresivo de resultados.
+
+---
 
 ## Derechos ARCO
 
-Si encuentras líneas que no reconoces, la app incluye información sobre cómo presentar solicitudes ARCO (Acceso, Rectificación, Cancelación y Oposición) ante cada operadora.
+Si encuentras líneas que no reconoces, la aplicación incluye información sobre cómo iniciar solicitudes ARCO ante las operadoras correspondientes.
+
+ARCO hace referencia a los derechos de:
+
+- Acceso
+- Rectificación
+- Cancelación
+- Oposición
+
+---
 
 ## Contexto legal
 
-Esta herramienta solo consulta información sobre tu propio CURP. El uso para consultar CURPs de terceras personas sin su consentimiento puede ser contrario a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares.
+Esta herramienta está diseñada para consultar información asociada a tu propio CURP.
+
+Consultar CURPs de terceras personas sin consentimiento puede ser contrario a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares y otras disposiciones aplicables en México.
+
+El usuario es responsable del uso que haga de la herramienta.
+
+---
+
+## Autor
+
+Desarrollado por Jorge Mora  
+GitHub: [@moraxh](https://github.com/moraxh)
