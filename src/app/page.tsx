@@ -54,13 +54,13 @@ export default function MisLineas() {
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 selection:bg-zinc-900 selection:text-white font-sans">
-      <div className="bg-red-600 text-white text-sm py-3 px-4 flex justify-center items-center gap-3">
+      <div className="bg-blue-600 text-white text-sm py-3 px-4 flex justify-center items-center gap-3">
         <AlertCircle className="w-5 h-5 shrink-0" />
         <p className="text-center max-w-4xl font-medium">
-          <strong>Aviso de servicio:</strong> Telcel y Weex están experimentando
-          fallas debido a la alta demanda. Dado que consumimos directamente sus
-          servicios, este problema de capacidad en sus servidores está fuera de
-          nuestro control.
+          <strong>Aviso sobre Telcel:</strong> Telcel estaba arrojando falsos
+          negativos (indicando que no tenías líneas cuando sí tenías). El
+          problema ya debería estar solucionado, te recomendamos volver a
+          consultarlo. (Weex sigue experimentando fallas).
         </p>
       </div>
 

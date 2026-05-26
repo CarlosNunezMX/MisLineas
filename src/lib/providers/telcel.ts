@@ -2,6 +2,76 @@ import https from "node:https";
 import type { LineResult } from "@/types";
 
 export async function lookupCURPInTelcel(curp: string): Promise<LineResult> {
+  const generateRandomHex = (size: number) =>
+    [...Array(size)]
+      .map(() =>
+        Math.floor(Math.random() * 16)
+          .toString(16)
+          .toUpperCase(),
+      )
+      .join("");
+
+  const generateRandomAlphanumeric = (size: number) =>
+    [...Array(size)]
+      .map(() => Math.floor(Math.random() * 36).toString(36))
+      .join("");
+
+  const commonHeaders = {
+    applicationid: "PRB",
+    channel: "Q36",
+    "content-type": "application/json",
+    messageuuid: `SIS${generateRandomHex(24)}`,
+    sendby: `t3l-${generateRandomAlphanumeric(8)}-${generateRandomAlphanumeric(4)}-${generateRandomAlphanumeric(6)}-${generateRandomAlphanumeric(6)}-${generateRandomAlphanumeric(8)}`,
+    origin: "https://registro.telcel.com",
+    referer: "https://registro.telcel.com/vinculatulinea/",
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+    Accept: "application/json, text/plain, */*",
+    token: "token",
+  };
+
+  const frontTokenLocal = `captcha_${Date.now()}_${generateRandomAlphanumeric(15)}`;
+
+  const captchaResponse = await new Promise<{
+    ok: boolean;
+    data?: { signature?: string };
+  }>((resolve) => {
+    const req = https.request(
+      {
+        hostname: "registro.telcel.com",
+        path: "/process-api/v1/process/captcha/generate",
+        method: "POST",
+        headers: commonHeaders,
+        rejectUnauthorized: false,
+      },
+      (res) => {
+        let data = "";
+        res.on("data", (chunk) => {
+          data += chunk;
+        });
+        res.on("end", () => {
+          try {
+            resolve({
+              ok: res.statusCode === 200,
+              data: JSON.parse(data),
+            });
+          } catch (_e) {
+            resolve({ ok: false });
+          }
+        });
+      },
+    );
+
+    req.on("error", () => {
+      resolve({ ok: false });
+    });
+
+    req.write(JSON.stringify({ frontToken: frontTokenLocal }));
+    req.end();
+  });
+
+  const signature = captchaResponse.data?.signature || "";
+
   const validationBody = {
     typePerson: "F",
     claveIdentidad: curp,
@@ -9,27 +79,26 @@ export async function lookupCURPInTelcel(curp: string): Promise<LineResult> {
       type: "CONS",
       category: "AUTO",
     },
+    signature,
   };
 
   const validationHeaders = {
-    applicationid: "PRB",
-    channel: "OSA",
-    "content-type": "application/json",
-    messageuuid: "SIS_RANDOM",
-    sendby: "random-id",
-    origin: "https://registro.telcel.com",
-    referer: "https://registro.telcel.com/vinculatulinea/",
-    token: "token",
-    "User-Agent":
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    Accept: "*/*",
+    ...commonHeaders,
+    token: frontTokenLocal,
   };
 
   const validationResponse = await new Promise<{
     ok: boolean;
     statusText: string;
     data?: {
-      errorList?: Array<{ code: string; description: string }>;
+      errorList?: Array<{
+        code: string;
+        description: string;
+        businessMeaning?: string;
+      }>;
+      process?: {
+        id?: string;
+      };
       [key: string]: unknown;
     };
   }>((resolve) => {
@@ -92,17 +161,38 @@ export async function lookupCURPInTelcel(curp: string): Promise<LineResult> {
   }
 
   if (validationData.errorList && validationData.errorList.length > 0) {
+    const isNoLinesError = validationData.errorList.some(
+      (err: { code: string }) => err.code === "BE_MP_BPS_0041",
+    );
+
+    if (isNoLinesError) {
+      return {
+        company: "Telcel",
+        lines: [],
+        isRegistered: false,
+      };
+    }
+
     return {
       company: "Telcel",
       lines: [],
-      isRegistered: false,
+      error: `Telcel error: ${validationData.errorList[0].businessMeaning || validationData.errorList[0].description}`,
+    };
+  }
+
+  if (validationData.process?.id) {
+    return {
+      company: "Telcel",
+      lines: [],
+      isRegistered: true,
+      rawApiResponse: validationData,
     };
   }
 
   return {
     company: "Telcel",
     lines: [],
-    isRegistered: true,
+    error: "Respuesta inesperada de Telcel",
     rawApiResponse: validationData,
   };
 }
