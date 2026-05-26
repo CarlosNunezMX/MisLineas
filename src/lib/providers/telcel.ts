@@ -2,9 +2,9 @@ import https from "node:https";
 import type { LineResult } from "@/types";
 
 export async function lookupCURPInTelcel(curp: string): Promise<LineResult> {
-  const CAPTCHA_MAX_RETRIES = 3;
-  const CAPTCHA_RETRY_DELAY_MS = 1500;
-  const CAPTCHA_READY_DELAY_MS = 1200;
+  const CAPTCHA_MAX_RETRIES = 5;
+  const CAPTCHA_RETRY_DELAY_MS = 2500;
+  const CAPTCHA_READY_DELAY_MS = 2000;
 
   const generateRandomHex = (size: number) =>
     [...Array(size)]
