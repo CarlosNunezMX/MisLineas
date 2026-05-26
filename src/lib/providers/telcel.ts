@@ -2,6 +2,8 @@ import https from "node:https";
 import type { LineResult } from "@/types";
 
 export async function lookupCURPInTelcel(curp: string): Promise<LineResult> {
+  const CAPTCHA_MAX_RETRIES = 3;
+
   const generateRandomHex = (size: number) =>
     [...Array(size)]
       .map(() =>
@@ -30,45 +32,78 @@ export async function lookupCURPInTelcel(curp: string): Promise<LineResult> {
     token: "token",
   };
 
-  const frontTokenLocal = `captcha_${Date.now()}_${generateRandomAlphanumeric(15)}`;
-
-  const captchaResponse = await new Promise<{
-    ok: boolean;
-    data?: { signature?: string };
-  }>((resolve) => {
-    const req = https.request(
-      {
-        hostname: "registro.telcel.com",
-        path: "/process-api/v1/process/captcha/generate",
-        method: "POST",
-        headers: commonHeaders,
-        rejectUnauthorized: false,
-      },
-      (res) => {
-        let data = "";
-        res.on("data", (chunk) => {
-          data += chunk;
-        });
-        res.on("end", () => {
-          try {
-            resolve({
-              ok: res.statusCode === 200,
-              data: JSON.parse(data),
-            });
-          } catch (_e) {
-            resolve({ ok: false });
-          }
-        });
-      },
-    );
-
-    req.on("error", () => {
-      resolve({ ok: false });
+  const sleep = (ms: number) =>
+    new Promise((resolve) => {
+      setTimeout(resolve, ms);
     });
 
-    req.write(JSON.stringify({ frontToken: frontTokenLocal }));
-    req.end();
-  });
+  const generateCaptcha = async (frontToken: string) => {
+    let lastResponse: {
+      ok: boolean;
+      statusCode?: number;
+      data?: { signature?: string };
+    } = { ok: false };
+
+    for (let attempt = 0; attempt <= CAPTCHA_MAX_RETRIES; attempt += 1) {
+      const captchaResponse = await new Promise<{
+        ok: boolean;
+        statusCode?: number;
+        data?: { signature?: string };
+      }>((resolve) => {
+        const req = https.request(
+          {
+            hostname: "registro.telcel.com",
+            path: "/process-api/v1/process/captcha/generate",
+            method: "POST",
+            headers: commonHeaders,
+            rejectUnauthorized: false,
+          },
+          (res) => {
+            let data = "";
+            res.on("data", (chunk) => {
+              data += chunk;
+            });
+            res.on("end", () => {
+              try {
+                resolve({
+                  ok: res.statusCode === 200,
+                  statusCode: res.statusCode,
+                  data: JSON.parse(data),
+                });
+              } catch (_e) {
+                resolve({
+                  ok: false,
+                  statusCode: res.statusCode,
+                });
+              }
+            });
+          },
+        );
+
+        req.on("error", () => {
+          resolve({ ok: false });
+        });
+
+        req.write(JSON.stringify({ frontToken }));
+        req.end();
+      });
+
+      if (captchaResponse.ok && captchaResponse.data?.signature) {
+        return captchaResponse;
+      }
+
+      lastResponse = captchaResponse;
+
+      if (attempt < CAPTCHA_MAX_RETRIES) {
+        await sleep(300 * (attempt + 1));
+      }
+    }
+
+    return lastResponse;
+  };
+
+  const frontTokenLocal = `captcha_${Date.now()}_${generateRandomAlphanumeric(15)}`;
+  const captchaResponse = await generateCaptcha(frontTokenLocal);
 
   const signature = captchaResponse.data?.signature || "";
 
