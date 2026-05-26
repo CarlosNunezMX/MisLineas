@@ -57,10 +57,10 @@ export default function MisLineas() {
       <div className="flex items-center justify-center gap-3 border-b border-red-300/60 bg-[linear-gradient(90deg,#dc2626_0%,#b91c1c_100%)] px-4 py-3 text-sm text-white">
         <AlertCircle className="w-5 h-5 shrink-0" />
         <p className="text-center max-w-4xl font-medium">
-          <strong>Aviso:</strong> Telcel y Weex están presentando fallas
-          intermitentes debido al alto volumen de tráfico y a la capacidad de
-          sus servidores. Si tu consulta falla, intenta nuevamente en unos
-          minutos.
+          <strong>Aviso:</strong> Telcel y Weex pueden presentar fallas
+          intermitentes, especialmente en horarios de alta demanda. Se
+          aplicaron mejoras para Telcel, pero aún puede fallar. Si tu consulta
+          falla, intenta nuevamente en unos minutos.
         </p>
       </div>
 

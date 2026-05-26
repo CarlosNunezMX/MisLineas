@@ -11,8 +11,9 @@ const CAPTCHA_ATTEMPTS_PER_ROUND = 4;
 const CAPTCHA_MAX_ROUNDS = 2;
 const CAPTCHA_RETRY_DELAYS_MS = [250];
 const CAPTCHA_READY_DELAY_MS = 250;
-const VALIDATION_ATTEMPTS_PER_ROUND = 2;
-const VALIDATION_MAX_ROUNDS = 2;
+const LOOKUP_MAX_ATTEMPTS = 2;
+const LOOKUP_RETRY_DELAYS_MS = [1000];
+const VALIDATION_MAX_ATTEMPTS = 2;
 const VALIDATION_RETRY_DELAYS_MS = [250];
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -253,14 +254,6 @@ type ValidationResponseData = {
   [key: string]: unknown;
 };
 
-type ValidationAttemptResult = {
-  index: number;
-  ok: boolean;
-  status: number;
-  data: ValidationResponseData | null;
-  raw: string;
-};
-
 async function generateCaptchaParallel(
   frontToken: string,
   attempts = CAPTCHA_ATTEMPTS_PER_ROUND,
@@ -300,7 +293,7 @@ async function generateCaptchaParallel(
     controllers.forEach((controller, i) => {
       void (async () => {
         try {
-          await sleepWithSignal(Math.random() * 300, controller.signal);
+          await sleepWithSignal(Math.random() * 50, controller.signal);
 
           const headers = buildHeaders();
 
@@ -375,12 +368,6 @@ async function generateCaptcha() {
     );
 
     if (result.signature) {
-      if (round > 0) {
-        logTelcel(`captcha recovered on round ${round + 1}`, {
-          attempts: summary,
-        });
-      }
-
       return {
         frontToken,
         signature: result.signature,
@@ -396,10 +383,6 @@ async function generateCaptcha() {
         CAPTCHA_RETRY_DELAYS_MS.at(-1) ||
         1500;
 
-      logTelcel(`captcha transient failure on round ${round + 1}`, {
-        attempts: summary,
-        retryInMs: delay,
-      });
       await sleep(delay);
       continue;
     }
@@ -431,127 +414,27 @@ async function validateEligibility(
     signature: captcha.signature,
   };
 
-  for (let round = 0; round < VALIDATION_MAX_ROUNDS; round += 1) {
-    const controllers = Array.from(
-      {
-        length: VALIDATION_ATTEMPTS_PER_ROUND,
-      },
-      () => new AbortController(),
+  for (let attempt = 0; attempt < VALIDATION_MAX_ATTEMPTS; attempt += 1) {
+    const response = await postJSON<ValidationResponseData>(
+      "/process-api/v1/process/elegibility",
+      body,
+      buildHeaders(captcha.frontToken),
     );
 
-    const result = await new Promise<{
-      winner: ValidationAttemptResult | null;
-      attempts: ValidationAttemptResult[];
-    }>((resolve) => {
-      let pending = controllers.length;
-      let finished = false;
-      const attempts: ValidationAttemptResult[] = [];
-
-      const complete = (winner: ValidationAttemptResult | null) => {
-        if (finished) {
-          return;
-        }
-
-        finished = true;
-        controllers.forEach((controller) => {
-          controller.abort();
-        });
-        resolve({
-          winner,
-          attempts,
-        });
-      };
-
-      controllers.forEach((controller, i) => {
-        void (async () => {
-          try {
-            await sleepWithSignal(Math.random() * 120, controller.signal);
-
-            const response = await postJSON<ValidationResponseData>(
-              "/process-api/v1/process/elegibility",
-              body,
-              buildHeaders(captcha.frontToken),
-              controller.signal,
-            );
-
-            if (response.raw === "aborted") {
-              return;
-            }
-
-            const attempt: ValidationAttemptResult = {
-              index: i,
-              ok: response.ok,
-              status: response.status,
-              data: response.data,
-              raw: response.raw,
-            };
-
-            attempts.push(attempt);
-
-            if (attempt.ok) {
-              complete(attempt);
-            }
-          } catch (error) {
-            if (!(error instanceof Error) || error.message !== "aborted") {
-              attempts.push({
-                index: i,
-                ok: false,
-                status: 0,
-                data: null,
-                raw: error instanceof Error ? error.message : String(error),
-              });
-            }
-          } finally {
-            pending -= 1;
-
-            if (!finished && pending === 0) {
-              complete(null);
-            }
-          }
-        })();
-      });
-    });
-    const summary = summarizeAttempts(
-      result.attempts.map((attempt) => ({
-        index: attempt.index,
-        status: attempt.status,
-        ok: attempt.ok,
-      })),
-    );
-
-    if (result.winner) {
-      if (round > 0) {
-        logTelcel(`validation recovered on round ${round + 1}`, {
-          attempts: summary,
-        });
-      }
-
-      return result.winner;
+    if (
+      response.ok ||
+      attempt === VALIDATION_MAX_ATTEMPTS - 1 ||
+      !isRetryableResponse(response.status, response.raw)
+    ) {
+      return response;
     }
 
-    const terminalAttempt = result.attempts.find(
-      (attempt) => !isRetryableResponse(attempt.status, attempt.raw),
-    );
+    const delay =
+      VALIDATION_RETRY_DELAYS_MS[attempt] ||
+      VALIDATION_RETRY_DELAYS_MS.at(-1) ||
+      250;
 
-    if (terminalAttempt) {
-      logTelcel("validation failed with terminal response", {
-        attempts: summary,
-      });
-      return terminalAttempt;
-    }
-
-    if (round < VALIDATION_MAX_ROUNDS - 1) {
-      const delay =
-        VALIDATION_RETRY_DELAYS_MS[round] ||
-        VALIDATION_RETRY_DELAYS_MS.at(-1) ||
-        250;
-
-      logTelcel(`validation transient failure on round ${round + 1}`, {
-        attempts: summary,
-        retryInMs: delay,
-      });
-      await sleep(delay);
-    }
+    await sleep(delay);
   }
 
   logTelcel("validation exhausted retries");
@@ -563,74 +446,99 @@ async function validateEligibility(
   };
 }
 
+function hasErrorCode(data: ValidationResponseData | null, code: string) {
+  return data?.errorList?.some((error) => error.code === code) ?? false;
+}
+
 export async function lookupCURPInTelcel(curp: string): Promise<LineResult> {
   try {
-    const captcha = await generateCaptcha();
+    for (let attempt = 0; attempt < LOOKUP_MAX_ATTEMPTS; attempt += 1) {
+      const captcha = await generateCaptcha();
 
-    if (!captcha) {
-      return {
-        company: "Telcel",
-        lines: [],
-        error: "Could not generate captcha signature",
-        temporaryUnavailable: true,
-      };
-    }
-
-    logTelcel("captcha signature", captcha.signature);
-    await sleep(CAPTCHA_READY_DELAY_MS);
-
-    const validationResponse = await validateEligibility(curp, captcha);
-
-    if (!validationResponse.ok) {
-      return {
-        company: "Telcel",
-        lines: [],
-        error: `Validation failed (${validationResponse.status})`,
-        temporaryUnavailable: isRetryableResponse(
-          validationResponse.status,
-          validationResponse.raw,
-        ),
-        rawApiResponse: validationResponse.raw,
-      };
-    }
-
-    const data = validationResponse.data;
-
-    if (!data) {
-      return {
-        company: "Telcel",
-        lines: [],
-        error: "Empty validation response",
-      };
-    }
-
-    if (data.errorList && data.errorList.length > 0) {
-      const noLines = data.errorList.some(
-        (err) => err.code === "BE_MP_BPS_0041",
-      );
-
-      if (noLines) {
+      if (!captcha) {
         return {
           company: "Telcel",
           lines: [],
-          isRegistered: false,
+          error: "Could not generate captcha signature",
+          temporaryUnavailable: true,
+        };
+      }
+
+      await sleep(CAPTCHA_READY_DELAY_MS);
+
+      const validationResponse = await validateEligibility(curp, captcha);
+
+      const data = validationResponse.data;
+
+      if (
+        hasErrorCode(data, "BE_MP_BPS_0053") &&
+        attempt < LOOKUP_MAX_ATTEMPTS - 1
+      ) {
+        const delay =
+          LOOKUP_RETRY_DELAYS_MS[attempt] ||
+          LOOKUP_RETRY_DELAYS_MS.at(-1) ||
+          250;
+
+        await sleep(delay);
+        continue;
+      }
+
+      if (!validationResponse.ok) {
+        return {
+          company: "Telcel",
+          lines: [],
+          error: `Validation failed (${validationResponse.status})`,
+          temporaryUnavailable: isRetryableResponse(
+            validationResponse.status,
+            validationResponse.raw,
+          ),
+          rawApiResponse: validationResponse.raw,
+        };
+      }
+
+      if (!data) {
+        return {
+          company: "Telcel",
+          lines: [],
+          error: "Empty validation response",
+        };
+      }
+
+      if (data.errorList && data.errorList.length > 0) {
+        const noLines = data.errorList.some(
+          (err) => err.code === "BE_MP_BPS_0041",
+        );
+
+        if (noLines) {
+          return {
+            company: "Telcel",
+            lines: [],
+            isRegistered: false,
+          };
+        }
+
+        return {
+          company: "Telcel",
+          lines: [],
+          error:
+            data.errorList[0].businessMeaning || data.errorList[0].description,
+          rawApiResponse: data,
+        };
+      }
+
+      if (data.process?.id) {
+        return {
+          company: "Telcel",
+          lines: [],
+          isRegistered: true,
+          rawApiResponse: data,
         };
       }
 
       return {
         company: "Telcel",
         lines: [],
-        error:
-          data.errorList[0].businessMeaning || data.errorList[0].description,
-        rawApiResponse: data,
-      };
-    }
-
-    if (data.process?.id) {
-      return {
-        company: "Telcel",
-        lines: [],
-        isRegistered: true,
+        error: "Unexpected Telcel response",
         rawApiResponse: data,
       };
     }
@@ -638,8 +546,8 @@ export async function lookupCURPInTelcel(curp: string): Promise<LineResult> {
     return {
       company: "Telcel",
       lines: [],
-      error: "Unexpected Telcel response",
-      rawApiResponse: data,
+      error: "Could not validate Telcel eligibility",
+      temporaryUnavailable: true,
     };
   } catch (e) {
     return {
