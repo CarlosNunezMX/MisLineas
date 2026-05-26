@@ -18,6 +18,7 @@ export function LineCard({ linea, idx, onReport }: Props) {
     !linea.isPossible &&
     !linea.isNotFound &&
     !linea.isError &&
+    !linea.isUnavailable &&
     linea.numero !== "Número no confirmado";
   const website = isConfirmed ? getProviderWebsite(linea.operadora) : null;
 
@@ -50,6 +51,10 @@ export function LineCard({ linea, idx, onReport }: Props) {
               <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">
                 Error
               </span>
+            ) : linea.isUnavailable ? (
+              <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">
+                No disponible
+              </span>
             ) : (
               <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-medium">
                 Registrada
@@ -61,7 +66,7 @@ export function LineCard({ linea, idx, onReport }: Props) {
               "font-mono text-base text-zinc-600",
               linea.numero === "Número no confirmado" &&
                 "italic text-sm text-zinc-400",
-              (linea.isNotFound || linea.isError) &&
+              (linea.isNotFound || linea.isError || linea.isUnavailable) &&
                 "italic text-sm text-zinc-400",
             )}
           >
@@ -83,7 +88,7 @@ export function LineCard({ linea, idx, onReport }: Props) {
             <Flag className="w-4 h-4" />
           </button>
         )}
-        {(linea.isError || linea.isNotFound) && (
+        {(linea.isError || linea.isNotFound || linea.isUnavailable) && (
           <a
             href="https://docs.google.com/forms/d/e/1FAIpQLSdI1KnQDXHA6lnAD29JZLokvf5NRCeLb_wPuTiDQ1bs8os6_A/viewform"
             target="_blank"

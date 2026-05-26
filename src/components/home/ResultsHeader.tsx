@@ -25,7 +25,7 @@ export function ResultsHeader({
   onNuevaConsulta,
 }: Props) {
   const detectedCount = results.filter(
-    (l) => !l.isNotFound && !l.isError,
+    (l) => !l.isNotFound && !l.isError && !l.isUnavailable,
   ).length;
   const riskLevel = getRiskLevel(results);
 

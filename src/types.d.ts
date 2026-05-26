@@ -5,6 +5,7 @@ export type LineResult = {
   possibleProviders?: string[];
   notFoundProviders?: string[];
   error?: string;
+  temporaryUnavailable?: boolean;
   rawApiResponse?: unknown;
 };
 
@@ -15,6 +16,7 @@ export interface DisplayLine {
   isPossible?: boolean;
   isNotFound?: boolean;
   isError?: boolean;
+  isUnavailable?: boolean;
 }
 
 export interface ProviderResult {
@@ -24,6 +26,8 @@ export interface ProviderResult {
   possibleProviders?: string[];
   notFoundProviders?: string[];
   error?: string;
+  temporaryUnavailable?: boolean;
+  rawApiResponse?: unknown;
 }
 
 export interface ProviderResponse {

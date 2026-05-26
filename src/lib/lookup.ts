@@ -6,6 +6,16 @@ export function transformApiResponse(
   const lines: DisplayLine[] = [];
 
   for (const { provider, result } of responses) {
+    if (result.temporaryUnavailable) {
+      lines.push({
+        id: `${provider}-unavailable`,
+        operadora: provider,
+        numero: "Temporalmente no disponible",
+        isUnavailable: true,
+      });
+      continue;
+    }
+
     if (result.error) {
       if (result.possibleProviders && result.possibleProviders.length > 0) {
         for (const posible of result.possibleProviders) {
@@ -104,8 +114,24 @@ export function transformApiResponse(
   }
 
   lines.sort((a, b) => {
-    const aScore = a.isError ? 3 : a.isNotFound ? 2 : a.isPossible ? 1 : 0;
-    const bScore = b.isError ? 3 : b.isNotFound ? 2 : b.isPossible ? 1 : 0;
+    const aScore = a.isError
+      ? 4
+      : a.isUnavailable
+        ? 3
+        : a.isNotFound
+          ? 2
+          : a.isPossible
+            ? 1
+            : 0;
+    const bScore = b.isError
+      ? 4
+      : b.isUnavailable
+        ? 3
+        : b.isNotFound
+          ? 2
+          : b.isPossible
+            ? 1
+            : 0;
     if (aScore !== bScore) return aScore - bScore;
     return a.operadora.localeCompare(b.operadora);
   });
@@ -119,10 +145,10 @@ export function getRiskLevel(lines: DisplayLine[]): {
   description: string;
 } {
   const confirmed = lines.filter(
-    (l) => !l.isPossible && !l.isNotFound && !l.isError,
+    (l) => !l.isPossible && !l.isNotFound && !l.isError && !l.isUnavailable,
   ).length;
   const possible = lines.filter(
-    (l) => l.isPossible && !l.isNotFound && !l.isError,
+    (l) => l.isPossible && !l.isNotFound && !l.isError && !l.isUnavailable,
   ).length;
   if (confirmed === 0 && possible === 0)
     return {

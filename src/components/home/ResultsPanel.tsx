@@ -31,12 +31,13 @@ export function ResultsPanel({
   const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
 
   const confirmedLines = results.filter(
-    (l) => !l.isPossible && !l.isNotFound && !l.isError,
+    (l) => !l.isPossible && !l.isNotFound && !l.isError && !l.isUnavailable,
   );
   const possibleLines = results.filter(
-    (l) => l.isPossible && !l.isNotFound && !l.isError,
+    (l) => l.isPossible && !l.isNotFound && !l.isError && !l.isUnavailable,
   );
   const errorLines = results.filter((l) => l.isError);
+  const unavailableLines = results.filter((l) => l.isUnavailable);
   const notFoundLines = results.filter((l) => l.isNotFound);
 
   const filterTabs: { key: FilterTab; label: string; count: number }[] = [
@@ -93,24 +94,31 @@ export function ResultsPanel({
         onNuevaConsulta={onNuevaConsulta}
       />
 
-      {!loading && (errorLines.length > 0 || notFoundLines.length > 0) && (
-        <div className="bg-blue-50 text-blue-900 text-sm p-4 rounded-2xl border border-blue-100 flex gap-3 text-left shadow-sm">
-          <MessageSquareWarning className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-          <p>
-            <strong>¿Una línea no aparece o un operador falló?</strong> Al ser
-            un proyecto independiente dependemos del feedback de la comunidad.{" "}
-            <a
-              href="https://docs.google.com/forms/d/e/1FAIpQLSdI1KnQDXHA6lnAD29JZLokvf5NRCeLb_wPuTiDQ1bs8os6_A/viewform"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold underline underline-offset-2 hover:text-blue-700"
-            >
-              Repórtanos el problema aquí
-            </a>{" "}
-            para investigar y buscar una solución.
-          </p>
-        </div>
-      )}
+      {!loading &&
+        (errorLines.length > 0 ||
+          unavailableLines.length > 0 ||
+          notFoundLines.length > 0) && (
+          <div className="bg-blue-50 text-blue-900 text-sm p-4 rounded-2xl border border-blue-100 flex gap-3 text-left shadow-sm">
+            <MessageSquareWarning className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+            <p>
+              <strong>
+                ¿Una línea no aparece o una operadora estuvo temporalmente no
+                disponible?
+              </strong>{" "}
+              Al ser un proyecto independiente dependemos del feedback de la
+              comunidad.{" "}
+              <a
+                href="https://docs.google.com/forms/d/e/1FAIpQLSdI1KnQDXHA6lnAD29JZLokvf5NRCeLb_wPuTiDQ1bs8os6_A/viewform"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold underline underline-offset-2 hover:text-blue-700"
+              >
+                Repórtanos el problema aquí
+              </a>{" "}
+              para investigar y buscar una solución.
+            </p>
+          </div>
+        )}
 
       <FilterTabs
         tabs={filterTabs}

@@ -14,8 +14,14 @@ export function useLookup(onConsult?: (curp: string) => void) {
   const [scannedCount, setScannedCount] = useState(0);
   const [liveMessage, setLiveMessage] = useState("");
   const abortRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
 
   const consultar = async (curp: string) => {
+    abortRef.current?.abort();
+
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
+
     setError(null);
     setResults([]);
     setTimedOut(false);
@@ -29,6 +35,10 @@ export function useLookup(onConsult?: (curp: string) => void) {
 
     const timeoutId = setTimeout(() => {
       controller.abort();
+      if (requestIdRef.current !== requestId) {
+        return;
+      }
+
       setTimedOut(true);
       setLoading(false);
     }, QUERY_TIMEOUT_MS * 2);
@@ -52,6 +62,11 @@ export function useLookup(onConsult?: (curp: string) => void) {
 
       if (!response.body) throw new Error("No body in response");
 
+      if (requestIdRef.current !== requestId) {
+        clearTimeout(timeoutId);
+        return;
+      }
+
       setQueryTime(new Date());
 
       const reader = response.body.getReader();
@@ -63,6 +78,11 @@ export function useLookup(onConsult?: (curp: string) => void) {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+
+        if (requestIdRef.current !== requestId) {
+          clearTimeout(timeoutId);
+          return;
+        }
 
         buffer += decoder.decode(value, { stream: true });
         const parts = buffer.split("\n");
@@ -83,11 +103,21 @@ export function useLookup(onConsult?: (curp: string) => void) {
         setResults(transformApiResponse([...accumulated]));
       }
 
+      if (requestIdRef.current !== requestId) {
+        clearTimeout(timeoutId);
+        return;
+      }
+
       setLiveMessage("Consulta completada.");
       clearTimeout(timeoutId);
     } catch (err: unknown) {
       clearTimeout(timeoutId);
       if ((err as Error)?.name === "AbortError") return;
+
+      if (requestIdRef.current !== requestId) {
+        return;
+      }
+
       const msg =
         err instanceof Error
           ? err.message
@@ -95,21 +125,28 @@ export function useLookup(onConsult?: (curp: string) => void) {
       setError(msg);
       setLiveMessage(`Error: ${msg}`);
     } finally {
-      setLoading(false);
+      if (requestIdRef.current === requestId) {
+        setLoading(false);
+      }
     }
   };
 
   const retry = () => {
+    abortRef.current?.abort();
     setTimedOut(false);
     setError(null);
   };
 
   const reset = () => {
+    abortRef.current?.abort();
+    requestIdRef.current += 1;
     setResults(null);
     setQueryTime(null);
     setError(null);
     setTimedOut(false);
     setScannedCount(0);
+    setLiveMessage("");
+    setLoading(false);
   };
 
   return {
