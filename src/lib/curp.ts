@@ -1,4 +1,4 @@
-export const CURP_REGEX = /^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/;
+export const CURP_REGEX = /^[A-Z]{4}\d{6}[HMX][A-Z]{5}[A-Z0-9]\d$/;
 
 export function getCurpValidationError(curp: string): string | null {
   if (curp.length === 0) return null;
