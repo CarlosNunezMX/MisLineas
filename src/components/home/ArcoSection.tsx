@@ -10,9 +10,8 @@ export function ArcoSection() {
       <div className="grid md:grid-cols-2 gap-6">
         <div className="bg-white border border-zinc-200 rounded-2xl p-6 shadow-sm">
           <p className="text-sm text-zinc-600 mb-6 leading-relaxed">
-            La protección de datos personales te permite ejercer derechos ARCO
-            (Acceso, Rectificación, Cancelación, Oposición) ante cualquier
-            operadora.
+            De acuerdo con el <strong>INAI</strong>, la protección de datos personales te permite ejercer derechos ARCO
+            ante cualquier operadora. Tienes total soberanía sobre el uso de tu identidad.
           </p>
           <div className="grid grid-cols-2 gap-4">
             {ARCO_RIGHTS.map((a) => (
@@ -34,23 +33,23 @@ export function ArcoSection() {
             <div className="flex items-center gap-3 mb-4">
               <ShieldAlert className="w-6 h-6 text-red-500" />
               <h3 className="font-semibold text-zinc-900">
-                ¿Detectaste fraude?
+                ¿Detectaste una línea que no es tuya?
               </h3>
             </div>
             <p className="text-sm text-zinc-600 leading-relaxed mb-6">
-              Si encontraste una línea que no reconoces, debes presentar una
-              denuncia ante la operadora responsable. El uso indebido de
-              identidad es un delito.
+              Este es un problema grave. Alguien podría estar usando tu identidad para cometer delitos o fraudes. Tienes el derecho respaldado por el <strong>INAI</strong> y el <strong>IFT</strong> de exigir la cancelación inmediata. Debes levantar un reporte formal con la operadora para desconocer la línea.
             </p>
           </div>
-          <a
-            href="https://portal.crt.gob.mx/reporte-fallas-plataforma-registro"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
-          >
-            <ShieldAlert className="w-4 h-4" /> Reportar fraude en portal CRT
-          </a>
+          <div className="space-y-3">
+            <a
+              href="https://portal.crt.gob.mx/reporte-fallas-plataforma-registro"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
+            >
+              <ShieldAlert className="w-4 h-4" /> Entrar al portal del IFT (CRT)
+            </a>
+          </div>
         </div>
       </div>
     </section>

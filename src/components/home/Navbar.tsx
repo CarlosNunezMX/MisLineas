@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, ShieldAlert, X } from "lucide-react";
+import { Menu, ShieldAlert, Github, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import { useState } from "react";
@@ -38,6 +38,15 @@ export function Navbar() {
               className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors"
             >
               Derechos ARCO
+            </a>
+            <a
+              href="https://github.com/moraxh/MisLineas"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-zinc-500 hover:text-zinc-900 transition-colors"
+              aria-label="Código fuente en GitHub"
+            >
+              <Github className="w-5 h-5" />
             </a>
             <a
               href="https://portal.crt.gob.mx/reporte-fallas-plataforma-registro"

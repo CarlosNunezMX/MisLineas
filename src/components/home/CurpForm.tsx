@@ -6,6 +6,7 @@ import {
   ClipboardPaste,
   Loader2,
   X,
+  ShieldCheck,
 } from "lucide-react";
 import type React from "react";
 import { getCurpValidationError } from "@/lib/curp";
@@ -130,6 +131,12 @@ export function CurpForm({
               {curpValidationError}
             </p>
           )}
+          <div className="bg-emerald-50/80 border border-emerald-100 rounded-lg p-3 flex items-start gap-2 text-xs text-emerald-800">
+            <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
+            <p>
+              Tu CURP viaja cifrada, <strong>no se guarda</strong> en ninguna base de datos y solo se utiliza para la consulta en tiempo real.
+            </p>
+          </div>
           <div className="flex items-center justify-between text-xs">
             <p className="text-zinc-500">
               ¿No recuerdas tu CURP?{" "}
@@ -147,9 +154,14 @@ export function CurpForm({
 
         {history.length > 0 && (
           <div className="space-y-2">
-            <p className="text-xs font-medium text-zinc-500">
-              Búsquedas recientes:
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium text-zinc-500">
+                Búsquedas recientes:
+              </p>
+              <span className="text-[10px] text-zinc-400">
+                Guardadas solo en tu navegador
+              </span>
+            </div>
             <div className="flex flex-wrap gap-2">
               {history.map((h) => (
                 <button
