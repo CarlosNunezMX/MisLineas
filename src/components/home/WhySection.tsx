@@ -1,5 +1,5 @@
+import { Database, FileX, Search } from "lucide-react";
 import { WHY_CARDS } from "@/lib/data/content";
-import { ArrowRight, Search, FileX, Database } from "lucide-react";
 
 export function WhySection() {
   return (
@@ -31,7 +31,8 @@ export function WhySection() {
             ¿Cómo funciona por debajo?
           </h2>
           <p className="text-zinc-600">
-            Nuestro proceso es completamente transparente. Creemos que cuando entiendes qué hacemos con tus datos, la confianza es natural.
+            Nuestro proceso es completamente transparente. Creemos que cuando
+            entiendes qué hacemos con tus datos, la confianza es natural.
           </p>
         </div>
         <div className="grid md:grid-cols-3 gap-8 relative">
@@ -40,22 +41,37 @@ export function WhySection() {
             <div className="w-16 h-16 bg-white border-2 border-zinc-200 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
               <Search className="w-8 h-8 text-black" />
             </div>
-            <h3 className="font-bold text-zinc-900 mb-2">1. Ingresas tu CURP</h3>
-            <p className="text-sm text-zinc-600">Solo tú conoces este dato. Se envía cifrado a nuestro servidor puente.</p>
+            <h3 className="font-bold text-zinc-900 mb-2">
+              1. Ingresas tu CURP
+            </h3>
+            <p className="text-sm text-zinc-600">
+              Solo tú conoces este dato. Se envía cifrado a nuestro servidor
+              puente.
+            </p>
           </div>
           <div className="relative z-10 flex flex-col items-center text-center">
             <div className="w-16 h-16 bg-white border-2 border-zinc-200 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
               <Database className="w-8 h-8 text-black" />
             </div>
-            <h3 className="font-bold text-zinc-900 mb-2">2. Consulta Oficial</h3>
-            <p className="text-sm text-zinc-600">Hacemos la misma consulta pública que tú harías en las páginas de Telcel, AT&T, etc.</p>
+            <h3 className="font-bold text-zinc-900 mb-2">
+              2. Consulta Oficial
+            </h3>
+            <p className="text-sm text-zinc-600">
+              Hacemos la misma consulta pública que tú harías en las páginas de
+              Telcel, AT&T, etc.
+            </p>
           </div>
           <div className="relative z-10 flex flex-col items-center text-center">
             <div className="w-16 h-16 bg-white border-2 border-zinc-200 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
               <FileX className="w-8 h-8 text-black" />
             </div>
-            <h3 className="font-bold text-zinc-900 mb-2">3. Destrucción de Datos</h3>
-            <p className="text-sm text-zinc-600">Te mostramos los resultados y destruimos tu CURP. Nada se guarda en bases de datos.</p>
+            <h3 className="font-bold text-zinc-900 mb-2">
+              3. Destrucción de Datos
+            </h3>
+            <p className="text-sm text-zinc-600">
+              Te mostramos los resultados y destruimos tu CURP. Nada se guarda
+              en bases de datos.
+            </p>
           </div>
         </div>
       </section>

@@ -1,20 +1,14 @@
 import type { NextRequest } from "next/server";
 import {
-  lookupCURPINMobig,
-  lookupCURPINNextorMovil,
-  lookupCURPINYoMobile,
   lookupCURPInABIB,
   lookupCURPInAltanMVNO,
   lookupCURPInATT,
   lookupCURPInDialo,
   lookupCURPInIENTC,
   lookupCURPInLogisticaACN,
-  lookupCURPInMegamovil,
   lookupCURPInMirlo,
-  lookupCURPInSorcel,
   lookupCURPInTelcel,
   loookupCURPINWeeex,
-  loookupCURPInTalentoNetMVNO,
   loookupCURPInVirginMobile,
 } from "@/lib/providers";
 import { validateCURP } from "@/lib/providers/curp";
@@ -151,7 +145,7 @@ export async function POST(req: NextRequest) {
           })
           .then((response) => {
             // Write the individual response as a JSON line
-            controller.enqueue(encoder.encode(JSON.stringify(response) + "\n"));
+            controller.enqueue(encoder.encode(`${JSON.stringify(response)}\n`));
           }),
       );
 

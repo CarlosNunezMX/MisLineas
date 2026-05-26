@@ -29,7 +29,7 @@ export async function lookupCURPInLogisticaACN(
       validationData as { marca?: string; dn?: string }[]
     )
       .filter((e) => e.dn)
-      .map((e) => `${e.marca ?? "Logistica ACN"}: ******${e.dn!.slice(-4)}`);
+      .map((e) => `${e.marca ?? "Logistica ACN"}: ******${e.dn?.slice(-4)}`);
 
     return {
       company: "Logistica ACN",

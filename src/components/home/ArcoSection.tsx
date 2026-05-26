@@ -10,8 +10,9 @@ export function ArcoSection() {
       <div className="grid md:grid-cols-2 gap-6">
         <div className="bg-white border border-zinc-200 rounded-2xl p-6 shadow-sm">
           <p className="text-sm text-zinc-600 mb-6 leading-relaxed">
-            De acuerdo con el <strong>INAI</strong>, la protección de datos personales te permite ejercer derechos ARCO
-            ante cualquier operadora. Tienes total soberanía sobre el uso de tu identidad.
+            De acuerdo con el <strong>INAI</strong>, la protección de datos
+            personales te permite ejercer derechos ARCO ante cualquier
+            operadora. Tienes total soberanía sobre el uso de tu identidad.
           </p>
           <div className="grid grid-cols-2 gap-4">
             {ARCO_RIGHTS.map((a) => (
@@ -37,7 +38,11 @@ export function ArcoSection() {
               </h3>
             </div>
             <p className="text-sm text-zinc-600 leading-relaxed mb-6">
-              Este es un problema grave. Alguien podría estar usando tu identidad para cometer delitos o fraudes. Tienes el derecho respaldado por el <strong>INAI</strong> y el <strong>IFT</strong> de exigir la cancelación inmediata. Debes levantar un reporte formal con la operadora para desconocer la línea.
+              Este es un problema grave. Alguien podría estar usando tu
+              identidad para cometer delitos o fraudes. Tienes el derecho
+              respaldado por el <strong>INAI</strong> y el <strong>IFT</strong>{" "}
+              de exigir la cancelación inmediata. Debes levantar un reporte
+              formal con la operadora para desconocer la línea.
             </p>
           </div>
           <div className="space-y-3">

@@ -17,8 +17,8 @@ export function SecuritySection() {
             No contamos con una base de datos de usuarios; cada consulta
             orquesta conexiones cifradas de punto a punto con los registros
             oficiales de las operadoras. Si notas un historial de búsquedas,
-            <strong> solo se guarda localmente en tu navegador</strong> (LocalStorage), jamás
-            toca nuestros servidores.
+            <strong> solo se guarda localmente en tu navegador</strong>{" "}
+            (LocalStorage), jamás toca nuestros servidores.
           </p>
           <ul className="space-y-3">
             {SECURITY_BULLETS.map((item) => (

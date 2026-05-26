@@ -5,8 +5,8 @@ import {
   ArrowRight,
   ClipboardPaste,
   Loader2,
-  X,
   ShieldCheck,
+  X,
 } from "lucide-react";
 import type React from "react";
 import { getCurpValidationError } from "@/lib/curp";
@@ -92,7 +92,7 @@ export function CurpForm({
               aria-describedby={curpValidationError ? "curp-error" : undefined}
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-              <span
+              <output
                 className={cn(
                   "text-xs font-mono font-medium tabular-nums transition-colors",
                   curpCountColor,
@@ -100,7 +100,7 @@ export function CurpForm({
                 aria-label={`${curp.length} de 18 caracteres`}
               >
                 {curp.length}/18
-              </span>
+              </output>
               {curp.length > 0 && !loading && (
                 <button
                   type="button"
@@ -134,7 +134,8 @@ export function CurpForm({
           <div className="bg-emerald-50/80 border border-emerald-100 rounded-lg p-3 flex items-start gap-2 text-xs text-emerald-800">
             <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
             <p>
-              Tu CURP viaja cifrada, <strong>no se guarda</strong> en ninguna base de datos y solo se utiliza para la consulta en tiempo real.
+              Tu CURP viaja cifrada, <strong>no se guarda</strong> en ninguna
+              base de datos y solo se utiliza para la consulta en tiempo real.
             </p>
           </div>
           <div className="flex items-center justify-between text-xs">

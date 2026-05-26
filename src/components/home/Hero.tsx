@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Github } from "lucide-react";
+import { Github, Search } from "lucide-react";
 import { motion } from "motion/react";
 
 export function Hero() {
@@ -27,9 +27,7 @@ export function Hero() {
           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-700 shadow-sm hover:bg-emerald-100 transition-colors"
         >
           <Github className="w-3.5 h-3.5" />
-          <span>
-            Código Abierto y Auditable
-          </span>
+          <span>Código Abierto y Auditable</span>
         </motion.a>
       </div>
       <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-zinc-900 leading-tight">

@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, ShieldAlert, Github, X } from "lucide-react";
+import { Github, Menu, ShieldAlert, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import { useState } from "react";

@@ -26,6 +26,11 @@ export function ReportDialog({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
       onClick={onClose}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
+          onClose();
+        }
+      }}
       aria-modal="true"
       role="dialog"
       aria-label={`Opciones ARCO para ${operadora}`}
