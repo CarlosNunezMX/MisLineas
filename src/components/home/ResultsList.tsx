@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { LineCard } from "@/components/home/LineCard";
 import { SkeletonCard } from "@/components/ui/SkeletonCard";
+import { getOperatorDisplayStatus, OPERATORS } from "@/lib/data/operators";
 import type { DisplayLine, FilterTab } from "@/types";
 
 interface Props {
@@ -27,6 +28,11 @@ export function ResultsList({
   onReport,
 }: Props) {
   const [notFoundExpanded, setNotFoundExpanded] = useState(false);
+  const [unavailableExpanded, setUnavailableExpanded] = useState(false);
+
+  const unavailableOperators = OPERATORS.filter(
+    (op) => getOperatorDisplayStatus(op) !== "supported",
+  );
 
   return (
     <div className="space-y-3 max-h-[650px] overflow-y-auto pr-2 custom-scrollbar">
@@ -101,6 +107,56 @@ export function ResultsList({
                           </span>
                           <span className="text-xs text-zinc-400 italic">
                             Sin registro
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {activeFilter === "all" && unavailableOperators.length > 0 && (
+            <div className="border border-orange-200 rounded-2xl overflow-hidden bg-orange-50 shadow-sm mt-3">
+              <button
+                type="button"
+                onClick={() => setUnavailableExpanded((v) => !v)}
+                className="w-full flex items-center justify-between px-5 py-4 text-sm font-medium text-orange-900 hover:bg-orange-100/50 transition-colors"
+                aria-expanded={unavailableExpanded}
+              >
+                <span>
+                  {unavailableOperators.length} operadora
+                  {unavailableOperators.length !== 1 ? "s" : ""} no disponible
+                  {unavailableOperators.length !== 1 ? "s" : ""}
+                </span>
+                <motion.span
+                  animate={{ rotate: unavailableExpanded ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </motion.span>
+              </button>
+              <AnimatePresence>
+                {unavailableExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-5 pb-4 space-y-2 max-h-72 overflow-y-auto">
+                      {unavailableOperators.map((op) => (
+                        <div
+                          key={op.name}
+                          className="flex items-center justify-between py-2 border-b border-orange-100 last:border-0"
+                        >
+                          <span className="text-sm text-orange-900">
+                            {op.name}
+                          </span>
+                          <span className="text-xs text-orange-700/80 italic text-right pl-2 max-w-[60%]">
+                            {op.reason || "No disponible"}
                           </span>
                         </div>
                       ))}
