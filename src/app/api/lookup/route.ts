@@ -12,6 +12,8 @@ import {
   loookupCURPInVirginMobile,
 } from "@/lib/providers";
 import { validateCURP } from "@/lib/providers/curp";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { stripCURPs } from "@/lib/sanitize";
 import type { LineResult } from "@/types";
 
 const providers: Array<{
@@ -89,6 +91,17 @@ const providers: Array<{
 ];
 
 export async function POST(req: NextRequest) {
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const { allowed, remaining } = checkRateLimit(ip);
+
+  if (!allowed) {
+    return new Response(JSON.stringify({ error: "Too many requests" }), {
+      status: 429,
+      headers: { "Retry-After": "60" },
+    });
+  }
+
   const { curp } = await req.json();
 
   if (!curp || typeof curp !== "string") {
@@ -98,7 +111,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Validate the CURP
   const isValidCURP = validateCURP(curp);
 
   if (!isValidCURP) {
@@ -144,8 +156,8 @@ export async function POST(req: NextRequest) {
             };
           })
           .then((response) => {
-            // Write the individual response as a JSON line
-            controller.enqueue(encoder.encode(`${JSON.stringify(response)}\n`));
+            const sanitized = stripCURPs(response);
+            controller.enqueue(encoder.encode(`${JSON.stringify(sanitized)}\n`));
           }),
       );
 
@@ -159,6 +171,7 @@ export async function POST(req: NextRequest) {
       "Content-Type": "application/x-ndjson",
       "Cache-Control": "no-cache",
       Connection: "keep-alive",
+      "X-RateLimit-Remaining": String(remaining),
     },
   });
 }

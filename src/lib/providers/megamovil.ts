@@ -1,3 +1,4 @@
+import { stripCURPs } from "@/lib/sanitize";
 import type { LineResult } from "@/types";
 
 export async function lookupCURPInMegamovil(curp: string): Promise<LineResult> {
@@ -36,7 +37,7 @@ export async function lookupCURPInMegamovil(curp: string): Promise<LineResult> {
 
   console.log(
     "[megamovil] registered response:",
-    JSON.stringify(validationData, null, 2),
+    JSON.stringify(stripCURPs(validationData), null, 2),
   );
   return {
     company: "Megamovil",

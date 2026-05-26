@@ -1,3 +1,4 @@
+import { stripCURPs } from "@/lib/sanitize";
 import type { LineResult } from "@/types";
 
 export async function lookupCURPInDialo(curp: string): Promise<LineResult> {
@@ -41,7 +42,7 @@ export async function lookupCURPInDialo(curp: string): Promise<LineResult> {
   if (validationData.body.data[0].total > 0) {
     console.log(
       "[dialo] registered response:",
-      JSON.stringify(validationData, null, 2),
+      JSON.stringify(stripCURPs(validationData), null, 2),
     );
     return {
       company: "Dialo",

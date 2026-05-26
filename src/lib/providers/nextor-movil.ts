@@ -1,3 +1,4 @@
+import { stripCURPs } from "@/lib/sanitize";
 import type { LineResult } from "@/types";
 
 export async function lookupCURPINNextorMovil(
@@ -74,7 +75,7 @@ export async function lookupCURPINNextorMovil(
   if (validationData.encontrado) {
     console.log(
       "[nextor-movil] registered response:",
-      JSON.stringify(validationData, null, 2),
+      JSON.stringify(stripCURPs(validationData), null, 2),
     );
     return {
       company: "Nextor Movil",

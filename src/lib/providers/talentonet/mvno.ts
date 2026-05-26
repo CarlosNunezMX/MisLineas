@@ -1,3 +1,4 @@
+import { stripCURPs } from "@/lib/sanitize";
 import type { LineResult } from "@/types";
 
 const possibleProviders = ["Newww", "RedAguila", "Link Movil"];
@@ -41,7 +42,7 @@ export async function loookupCURPInTalentoNetMVNO(
   const positiveData = await validationResponse.json().catch(() => null);
   console.log(
     "[talentonet] registered response:",
-    JSON.stringify(positiveData, null, 2),
+    JSON.stringify(stripCURPs(positiveData), null, 2),
   );
   return {
     company: "Newww",

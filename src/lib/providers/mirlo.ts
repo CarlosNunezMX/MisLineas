@@ -1,3 +1,4 @@
+import { stripCURPs } from "@/lib/sanitize";
 import type { LineResult } from "@/types";
 
 export async function lookupCURPInMirlo(curp: string): Promise<LineResult> {
@@ -34,7 +35,7 @@ export async function lookupCURPInMirlo(curp: string): Promise<LineResult> {
 
   console.log(
     "[mirlo] registered response:",
-    JSON.stringify(validationData, null, 2),
+    JSON.stringify(stripCURPs(validationData), null, 2),
   );
   return {
     company: "Mirlo",

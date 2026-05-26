@@ -1,8 +1,7 @@
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
 import crypto from "node:crypto";
 import https from "node:https";
 
+import { stripCURPs } from "@/lib/sanitize";
 import type { LineResult } from "@/types";
 
 const BASE_HOST = "registro.telcel.com";
@@ -87,7 +86,7 @@ function logTelcel(message: string, payload?: unknown) {
     return;
   }
 
-  console.log(`${LOG_PREFIX} ${message}`, payload);
+  console.log(`${LOG_PREFIX} ${message}`, stripCURPs(payload));
 }
 
 function summarizeAttempts<
