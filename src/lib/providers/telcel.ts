@@ -83,6 +83,14 @@ export async function lookupCURPInTelcel(curp: string): Promise<LineResult> {
 
   const validationData = validationResponse.data;
 
+  if (!validationData) {
+    return {
+      company: "Telcel",
+      lines: [],
+      error: "Empty response data from Telcel",
+    };
+  }
+
   if (validationData.errorList && validationData.errorList.length > 0) {
     return {
       company: "Telcel",
