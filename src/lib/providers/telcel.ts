@@ -3,6 +3,8 @@ import type { LineResult } from "@/types";
 
 export async function lookupCURPInTelcel(curp: string): Promise<LineResult> {
   const CAPTCHA_MAX_RETRIES = 3;
+  const CAPTCHA_RETRY_DELAY_MS = 1500;
+  const CAPTCHA_READY_DELAY_MS = 1200;
 
   const generateRandomHex = (size: number) =>
     [...Array(size)]
@@ -95,7 +97,7 @@ export async function lookupCURPInTelcel(curp: string): Promise<LineResult> {
       lastResponse = captchaResponse;
 
       if (attempt < CAPTCHA_MAX_RETRIES) {
-        await sleep(300 * (attempt + 1));
+        await sleep(CAPTCHA_RETRY_DELAY_MS * (attempt + 1));
       }
     }
 
@@ -106,6 +108,10 @@ export async function lookupCURPInTelcel(curp: string): Promise<LineResult> {
   const captchaResponse = await generateCaptcha(frontTokenLocal);
 
   const signature = captchaResponse.data?.signature || "";
+
+  if (signature) {
+    await sleep(CAPTCHA_READY_DELAY_MS);
+  }
 
   const validationBody = {
     typePerson: "F",
