@@ -42,6 +42,14 @@ export function useLookup(onConsult?: (curp: string) => void) {
         signal: controller.signal,
       });
 
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.error ||
+            `Error: ${response.status} ${response.statusText}`,
+        );
+      }
+
       if (!response.body) throw new Error("No body in response");
 
       setQueryTime(new Date());
