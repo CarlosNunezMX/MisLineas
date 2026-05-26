@@ -4,6 +4,7 @@ import { AlertCircle } from "lucide-react";
 import { AnimatePresence } from "motion/react";
 import type React from "react";
 import { useState } from "react";
+import { AccordionItem } from "@/components/home/AccordionItem";
 import { ArcoSection } from "@/components/home/ArcoSection";
 import { CurpForm } from "@/components/home/CurpForm";
 import { EmptyState } from "@/components/home/EmptyState";
@@ -114,11 +115,23 @@ export default function MisLineas() {
           </div>
         </div>
 
-        <div className="mt-20 space-y-16">
+        <div className="mt-20 space-y-12">
           <OperatorsSection />
-          <WhySection />
-          <SecuritySection />
-          <ArcoSection />
+
+          <div className="max-w-4xl mx-auto space-y-4">
+            <h2 className="text-xl font-bold text-zinc-900 mb-6 px-2 text-center md:text-left">
+              Centro de Información
+            </h2>
+            <AccordionItem title="¿Por qué usar MisLíneas y cómo funciona?">
+              <WhySection />
+            </AccordionItem>
+            <AccordionItem title="Seguridad y Privacidad">
+              <SecuritySection />
+            </AccordionItem>
+            <AccordionItem title="Derechos ARCO y Denuncias">
+              <ArcoSection />
+            </AccordionItem>
+          </div>
         </div>
 
         <Footer />

@@ -3,12 +3,9 @@ import { ARCO_RIGHTS } from "@/lib/data/content";
 
 export function ArcoSection() {
   return (
-    <section id="arco" className="scroll-mt-24">
-      <h2 className="text-2xl font-bold text-zinc-900 mb-6">
-        Derechos ARCO y Denuncias
-      </h2>
-      <div className="grid md:grid-cols-2 gap-6">
-        <div className="bg-white border border-zinc-200 rounded-2xl p-6 shadow-sm">
+    <div className="pt-4">
+      <div className="grid md:grid-cols-2 gap-6 items-start">
+        <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-6">
           <p className="text-sm text-zinc-600 mb-6 leading-relaxed">
             De acuerdo con el <strong>INAI</strong>, la protección de datos
             personales te permite ejercer derechos ARCO ante cualquier
@@ -18,7 +15,7 @@ export function ArcoSection() {
             {ARCO_RIGHTS.map((a) => (
               <div
                 key={a.t}
-                className="bg-zinc-50 p-4 rounded-xl border border-zinc-100"
+                className="bg-white p-4 rounded-xl border border-zinc-200"
               >
                 <h4 className="font-semibold text-sm text-zinc-900 mb-1">
                   {a.t}
@@ -29,34 +26,33 @@ export function ArcoSection() {
           </div>
         </div>
 
-        <div className="bg-white border border-zinc-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+        <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-6 flex flex-col justify-between h-full">
           <div>
             <div className="flex items-center gap-3 mb-4">
               <ShieldAlert className="w-6 h-6 text-red-500" />
               <h3 className="font-semibold text-zinc-900">
-                ¿Detectaste una línea que no es tuya?
+                ¿Detectaste una línea desconocida?
               </h3>
             </div>
             <p className="text-sm text-zinc-600 leading-relaxed mb-6">
               Este es un problema grave. Alguien podría estar usando tu
               identidad para cometer delitos o fraudes. Tienes el derecho
               respaldado por el <strong>INAI</strong> y el <strong>IFT</strong>{" "}
-              de exigir la cancelación inmediata. Debes levantar un reporte
-              formal con la operadora para desconocer la línea.
+              de exigir la cancelación inmediata y levantar un reporte formal.
             </p>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-3 mt-auto">
             <a
               href="https://portal.crt.gob.mx/reporte-fallas-plataforma-registro"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors text-sm"
             >
               <ShieldAlert className="w-4 h-4" /> Entrar al portal del IFT (CRT)
             </a>
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

@@ -17,8 +17,8 @@ export function Navbar() {
             <Image
               src={logo}
               alt="MisLíneas"
-              width={28}
-              height={28}
+              width={34}
+              height={34}
               className="rounded-md transition-transform group-hover:scale-105"
             />
             <span className="font-semibold text-lg tracking-tight">

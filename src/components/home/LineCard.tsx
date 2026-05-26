@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Flag, Phone } from "lucide-react";
+import { ExternalLink, Flag, MessageSquareWarning, Phone } from "lucide-react";
 import { motion } from "motion/react";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { getProviderWebsite } from "@/lib/data/providerWebsites";
@@ -82,6 +82,18 @@ export function LineCard({ linea, idx, onReport }: Props) {
           >
             <Flag className="w-4 h-4" />
           </button>
+        )}
+        {(linea.isError || linea.isNotFound) && (
+          <a
+            href="https://docs.google.com/forms/d/e/1FAIpQLSdI1KnQDXHA6lnAD29JZLokvf5NRCeLb_wPuTiDQ1bs8os6_A/viewform"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 text-zinc-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-colors"
+            aria-label={`Reportar problema con ${linea.operadora}`}
+            title="Ayúdenos reportando este problema"
+          >
+            <MessageSquareWarning className="w-4 h-4" />
+          </a>
         )}
         {website && isConfirmed && (
           <a
