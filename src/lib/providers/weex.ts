@@ -32,7 +32,7 @@ export async function loookupCURPINWeeex(curp: string): Promise<LineResult> {
 
   const validationData = await validationResponse.json();
 
-  if (validationData.obj.dnActiveByCurpRfc.length === 0) {
+  if (validationData.obj?.dnActiveByCurpRfc?.length === 0) {
     return {
       company: "Weex",
       lines: [],
@@ -40,13 +40,13 @@ export async function loookupCURPINWeeex(curp: string): Promise<LineResult> {
     };
   }
 
-  console.log(
-    "[weex] registered response:",
-    JSON.stringify(validationData, null, 2),
+  const lines = validationData.obj.dnActiveByCurpRfc.map(
+    (item: { msisdn: string }) => item.msisdn,
   );
+
   return {
     company: "Weex",
-    lines: [],
+    lines,
     isRegistered: true,
     rawApiResponse: validationData,
   };
