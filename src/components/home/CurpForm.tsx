@@ -54,13 +54,21 @@ export function CurpForm({
   };
 
   return (
-    <div className="bg-white border border-zinc-200 shadow-sm rounded-2xl p-6">
+    <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-lg shadow-zinc-950/5 sm:p-7">
       <form onSubmit={onSubmit} className="space-y-5">
-        <div className="space-y-2">
-          <label
-            htmlFor="curp-input"
-            className="text-sm font-medium text-zinc-700"
-          >
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
+              Herramienta principal
+            </p>
+            <label
+              htmlFor="curp-input"
+              className="block text-base font-semibold text-zinc-900"
+            >
+              Ingresa tu CURP para comenzar
+            </label>
+          </div>
+          <label htmlFor="curp-input" className="sr-only">
             Ingresa tu CURP
           </label>
           <div className="relative">
@@ -71,7 +79,7 @@ export function CurpForm({
               autoCapitalize="characters"
               placeholder="Ej. XXXX000000XXXXXX00"
               className={cn(
-                "w-full bg-zinc-50 border border-zinc-200 px-4 py-3 pr-24 rounded-xl text-base outline-none transition-all placeholder:text-zinc-400",
+                "w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 pr-24 text-base outline-none transition-all placeholder:text-zinc-400",
                 "focus:border-black focus:ring-1 focus:ring-black",
                 "font-mono uppercase",
                 curpValidationError
@@ -131,7 +139,7 @@ export function CurpForm({
               {curpValidationError}
             </p>
           )}
-          <div className="bg-emerald-50/80 border border-emerald-100 rounded-lg p-3 flex items-start gap-2 text-xs text-emerald-800">
+          <div className="flex items-start gap-2 rounded-xl border border-emerald-100 bg-emerald-50/80 p-3 text-xs text-emerald-800">
             <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
             <p>
               Tu CURP viaja cifrada, <strong>no se guarda</strong> en ninguna
@@ -187,7 +195,7 @@ export function CurpForm({
         <button
           type="submit"
           disabled={loading || !curpIsValid}
-          className="w-full py-3.5 bg-black text-white rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-zinc-800 disabled:opacity-50 disabled:hover:bg-black transition-colors"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-black py-4 font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-50 disabled:hover:bg-black"
         >
           {loading ? (
             <>

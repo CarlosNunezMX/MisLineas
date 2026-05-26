@@ -2,46 +2,87 @@
 
 import { History } from "lucide-react";
 import { motion } from "motion/react";
-import { KNOWN_PROVIDERS } from "@/lib/data/content";
+import { KNOWN_PROVIDERS, TOTAL_PROVIDERS } from "@/lib/data/content";
 
 export function EmptyState() {
   return (
     <motion.div
       key="empty"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="h-full min-h-[400px] border border-dashed border-zinc-300 bg-zinc-50/50 rounded-2xl flex flex-col p-8 justify-center items-center text-center"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-[28px] border border-zinc-200 bg-zinc-50/70 p-8"
     >
-      <div className="w-12 h-12 bg-white rounded-full border border-zinc-200 flex items-center justify-center mb-4 shadow-sm">
-        <History className="w-5 h-5 text-zinc-400" />
-      </div>
-      <h3 className="font-semibold text-zinc-900 text-lg mb-1">
-        Listo para verificar
-      </h3>
-      <p className="text-sm text-zinc-500 mb-6">
-        Ingresa tu CURP para conocer las líneas a tu nombre.
-      </p>
+      <div className="space-y-6">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-zinc-200 bg-white text-zinc-500 shadow-sm">
+          <History className="h-6 w-6" />
+        </div>
 
-      <div className="w-full max-w-sm space-y-2 text-left">
-        <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
-          Consultando +80 Proveedores
-        </p>
-        {KNOWN_PROVIDERS.map((p) => (
-          <div
-            key={p.name}
-            className="flex items-center justify-between bg-white px-4 py-2.5 rounded-lg border border-zinc-200 shadow-sm"
-          >
-            <div className="flex items-center gap-3">
-              <p.icon className="w-4 h-4 text-zinc-400" />
-              <span className="text-sm font-medium text-zinc-700">
-                {p.name}
-              </span>
-            </div>
-            <span className="text-xs text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-md">
-              En espera
-            </span>
+        <div className="space-y-2 text-center">
+          <h3 className="text-2xl font-semibold tracking-tight text-zinc-950">
+            Listo para verificar tus líneas
+          </h3>
+          <p className="mx-auto max-w-2xl text-sm leading-6 text-zinc-600">
+            Aquí aparecerán los resultados de tu consulta con líneas
+            confirmadas, coincidencias posibles y operadoras revisadas.
+          </p>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-center shadow-sm">
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">
+              Cobertura
+            </p>
+            <p className="mt-2 text-3xl font-semibold text-zinc-950">
+              {TOTAL_PROVIDERS}+
+            </p>
+            <p className="mt-1 text-sm text-zinc-500">
+              Proveedores monitoreados
+            </p>
           </div>
-        ))}
+          <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-center shadow-sm">
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">
+              Resultado
+            </p>
+            <p className="mt-2 text-lg font-semibold text-zinc-950">
+              Confirmadas
+            </p>
+            <p className="mt-1 text-sm text-zinc-500">
+              Líneas detectadas a tu nombre
+            </p>
+          </div>
+          <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-center shadow-sm">
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">
+              Revisión
+            </p>
+            <p className="mt-2 text-lg font-semibold text-zinc-950">
+              Posibles y errores
+            </p>
+            <p className="mt-1 text-sm text-zinc-500">
+              Casos que conviene validar
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <p className="text-center text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
+            Cobertura destacada
+          </p>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {KNOWN_PROVIDERS.map((p) => (
+              <div
+                key={p.name}
+                className="flex items-center justify-center gap-3 rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm"
+              >
+                <div className="rounded-xl bg-zinc-100 p-2">
+                  <p.icon className="h-4 w-4 text-zinc-500" />
+                </div>
+                <span className="text-sm font-medium text-zinc-700">
+                  {p.name}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </motion.div>
   );

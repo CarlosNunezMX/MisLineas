@@ -18,6 +18,7 @@ export function AccordionItem({
   return (
     <div className="border border-zinc-200 bg-white rounded-2xl overflow-hidden shadow-sm">
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="w-full text-left px-6 py-5 flex items-center justify-between font-semibold text-zinc-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900"
         aria-expanded={isOpen}

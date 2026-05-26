@@ -53,8 +53,8 @@ export default function MisLineas() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 selection:bg-zinc-900 selection:text-white font-sans">
-      <div className="bg-red-600 text-white text-sm py-3 px-4 flex justify-center items-center gap-3">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#fafaf9_0%,#f4f4f5_40%,#ffffff_100%)] font-sans text-zinc-900 selection:bg-zinc-900 selection:text-white">
+      <div className="flex items-center justify-center gap-3 border-b border-red-300/60 bg-[linear-gradient(90deg,#dc2626_0%,#b91c1c_100%)] px-4 py-3 text-sm text-white">
         <AlertCircle className="w-5 h-5 shrink-0" />
         <p className="text-center max-w-4xl font-medium">
           <strong>Aviso:</strong> Telcel y Weex están presentando fallas
@@ -79,41 +79,39 @@ export default function MisLineas() {
 
       <Navbar />
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-12 md:py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
-          <div className="lg:col-span-5 space-y-8">
-            <Hero />
-            <CurpForm
-              curp={curp}
-              setCurp={setCurp}
-              loading={loading}
-              error={error}
-              timedOut={timedOut}
-              history={history}
-              onSubmit={handleConsultar}
-              onRetry={retry}
-            />
-            <Notices />
-          </div>
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 md:py-12">
+        <section className="mx-auto max-w-3xl space-y-6">
+          <Hero />
+          <CurpForm
+            curp={curp}
+            setCurp={setCurp}
+            loading={loading}
+            error={error}
+            timedOut={timedOut}
+            history={history}
+            onSubmit={handleConsultar}
+            onRetry={retry}
+          />
+          <Notices />
+        </section>
 
-          <div className="lg:col-span-7">
-            <AnimatePresence mode="wait">
-              {!results && !loading && !timedOut ? (
-                <EmptyState />
-              ) : results !== null ? (
-                <ResultsPanel
-                  results={results}
-                  curp={curp}
-                  loading={loading}
-                  scannedCount={scannedCount}
-                  queryTime={queryTime}
-                  onNuevaConsulta={handleNuevaConsulta}
-                  onReport={setReportTarget}
-                />
-              ) : null}
-            </AnimatePresence>
-          </div>
-        </div>
+        <section className="mx-auto mt-8 max-w-5xl">
+          <AnimatePresence mode="wait">
+            {!results && !loading && !timedOut ? (
+              <EmptyState />
+            ) : results !== null ? (
+              <ResultsPanel
+                results={results}
+                curp={curp}
+                loading={loading}
+                scannedCount={scannedCount}
+                queryTime={queryTime}
+                onNuevaConsulta={handleNuevaConsulta}
+                onReport={setReportTarget}
+              />
+            ) : null}
+          </AnimatePresence>
+        </section>
 
         <div className="mt-20 space-y-12">
           <OperatorsSection />
