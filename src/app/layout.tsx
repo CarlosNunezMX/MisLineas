@@ -5,20 +5,41 @@ import FaviconLight from "@/app/favicon.ico";
 import FaviconDark from "@/app/favicon_dark.ico";
 
 const siteUrl = "https://mislineas.com.mx";
-const siteTitle =
-  "MisLíneas | Consulta líneas telefónicas vinculadas a tu CURP";
+const siteName = "MisLíneas";
+const siteTitle = "MisLíneas - Consulta líneas telefónicas por CURP";
 const siteDescription =
   "Consulta las líneas telefónicas vinculadas a tu CURP en las principales operadoras de México.";
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${siteUrl}/#website`,
+      url: siteUrl,
+      name: siteName,
+      alternateName: "Mis Lineas",
+      description: siteDescription,
+      inLanguage: "es-MX",
+    },
+    {
+      "@type": "Organization",
+      "@id": `${siteUrl}/#organization`,
+      name: siteName,
+      url: siteUrl,
+      logo: `${siteUrl}/favicon.ico`,
+    },
+  ],
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
     default: siteTitle,
-    template: "%s | MisLíneas",
+    template: `%s - ${siteName}`,
   },
   description: siteDescription,
   keywords: [
-    "MisLíneas",
+    siteName,
     "CURP",
     "Líneas telefónicas",
     "Telcel",
@@ -30,16 +51,16 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
-  applicationName: "MisLíneas",
+  applicationName: siteName,
   authors: [{ name: "Moraxh", url: "https://github.com/moraxh" }],
   creator: "Moraxh",
-  publisher: "MisLíneas",
+  publisher: siteName,
   category: "utility",
   openGraph: {
     title: siteTitle,
     description: siteDescription,
     url: "/",
-    siteName: "MisLíneas",
+    siteName,
     locale: "es_MX",
     type: "website",
     images: [
@@ -80,8 +101,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body suppressHydrationWarning>{children}</body>
-      <Analytics />
+      <body suppressHydrationWarning>
+        {children}
+        <script
+          type="application/ld+json"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD is static metadata generated from local constants.
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
+        <Analytics />
+      </body>
     </html>
   );
 }
