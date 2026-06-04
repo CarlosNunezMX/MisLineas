@@ -13,6 +13,7 @@ export interface DisplayLine {
   id: string;
   operadora: string;
   numero: string;
+  disclaimer?: string;
   isPossible?: boolean;
   isNotFound?: boolean;
   isError?: boolean;

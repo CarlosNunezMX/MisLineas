@@ -98,6 +98,10 @@ export function transformApiResponse(
           id: `${provider}-hidden`,
           operadora: result.company || provider,
           numero: "Número oculto",
+          disclaimer:
+            provider === "Telcel"
+              ? "Telcel no informa el numero exacto de lineas registradas; solo confirma que hay al menos una vinculada a esta CURP."
+              : undefined,
           isPossible: false,
         });
       }

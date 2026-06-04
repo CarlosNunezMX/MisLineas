@@ -14,12 +14,20 @@ interface Props {
 }
 
 export function LineCard({ linea, idx, onReport }: Props) {
+  const hasVisibleNumber =
+    linea.numero !== "Número no confirmado" && linea.numero !== "Número oculto";
   const isConfirmed =
     !linea.isPossible &&
     !linea.isNotFound &&
     !linea.isError &&
     !linea.isUnavailable &&
-    linea.numero !== "Número no confirmado";
+    hasVisibleNumber;
+  const isRegisteredWithoutVisibleNumber =
+    !linea.isPossible &&
+    !linea.isNotFound &&
+    !linea.isError &&
+    !linea.isUnavailable &&
+    !hasVisibleNumber;
   const website = isConfirmed ? getProviderWebsite(linea.operadora) : null;
 
   return (
@@ -64,20 +72,26 @@ export function LineCard({ linea, idx, onReport }: Props) {
           <p
             className={cn(
               "font-mono text-base text-zinc-600",
-              linea.numero === "Número no confirmado" &&
-                "italic text-sm text-zinc-400",
+              !hasVisibleNumber && "italic text-sm text-zinc-400",
               (linea.isNotFound || linea.isError || linea.isUnavailable) &&
                 "italic text-sm text-zinc-400",
             )}
           >
             {linea.numero}
           </p>
+          {linea.disclaimer && (
+            <p className="mt-1 max-w-xl text-xs leading-5 text-amber-700">
+              {linea.disclaimer}
+            </p>
+          )}
         </div>
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
         {isConfirmed && <CopyButton text={linea.numero} />}
-        {(isConfirmed || linea.isPossible) && (
+        {(isConfirmed ||
+          linea.isPossible ||
+          isRegisteredWithoutVisibleNumber) && (
           <button
             type="button"
             onClick={() => onReport(linea.operadora)}
