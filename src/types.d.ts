@@ -3,6 +3,7 @@ export type LineResult = {
   lines: string[];
   isRegistered?: boolean;
   possibleProviders?: string[];
+  possibleDisclaimer?: string;
   notFoundProviders?: string[];
   error?: string;
   temporaryUnavailable?: boolean;

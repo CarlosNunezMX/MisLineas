@@ -4,6 +4,16 @@ import type { LineResult } from "@/types";
 
 const SECRET_KEY = "key_t3lcel_prod";
 
+const VINCULATULINEA_PROVIDERS = [
+  "AhorroCel",
+  "Chedraui Móvil",
+  "Freedompop",
+  "OXXO CEL",
+  "OUI",
+  "Uber Cel",
+  "Yobi Telecom",
+];
+
 function encryptCURP(curp: string): string {
   const key = Buffer.from(SECRET_KEY.substring(0, 16).padEnd(16, "\0"), "utf8");
   const cipher = createCipheriv("aes-128-ecb", key, null);
@@ -18,7 +28,7 @@ function generateProcessId(): string {
   return "OMV" + id;
 }
 
-// Single endpoint covers: AhorroCel, Chedraui Móvil, Freedompop, OXXO CEL, OUI, Uber Cel, Yobi Telecom
+// Single endpoint covers all VINCULATULINEA_PROVIDERS
 export async function lookupCURPInVinculatulinea(curp: string): Promise<LineResult> {
   const processId = generateProcessId();
   const encryptedCURP = encryptCURP(curp);
@@ -49,7 +59,7 @@ export async function lookupCURPInVinculatulinea(curp: string): Promise<LineResu
       JSON.stringify(stripCURPs(data), null, 2),
     );
     return {
-      company: "Vinculatulinea (Freedompop/OUI/OXXO CEL/Uber Cel/AhorroCel/Chedraui Móvil/Yobi Telecom)",
+      company: "Vinculatulinea",
       lines: [],
       error: "Failed to validate CURP with Vinculatulinea",
     };
@@ -58,7 +68,7 @@ export async function lookupCURPInVinculatulinea(curp: string): Promise<LineResu
   if (!data) {
     console.error("[vinculatulinea] Empty or invalid JSON response");
     return {
-      company: "Vinculatulinea (Freedompop/OUI/OXXO CEL/Uber Cel/AhorroCel/Chedraui Móvil/Yobi Telecom)",
+      company: "Vinculatulinea",
       lines: [],
       error: "Invalid response from Vinculatulinea",
     };
@@ -70,16 +80,17 @@ export async function lookupCURPInVinculatulinea(curp: string): Promise<LineResu
     data.subscription.length === 0
   ) {
     return {
-      company: "Vinculatulinea (Freedompop/OUI/OXXO CEL/Uber Cel/AhorroCel/Chedraui Móvil/Yobi Telecom)",
+      company: "Vinculatulinea",
       lines: [],
       isRegistered: false,
+      notFoundProviders: VINCULATULINEA_PROVIDERS,
     };
   }
 
   if (data.responseCode === 3) {
     console.error("[vinculatulinea] External service error:", data.responseMessage);
     return {
-      company: "Vinculatulinea (Freedompop/OUI/OXXO CEL/Uber Cel/AhorroCel/Chedraui Móvil/Yobi Telecom)",
+      company: "Vinculatulinea",
       lines: [],
       error: "External service error from Vinculatulinea",
     };
@@ -89,9 +100,18 @@ export async function lookupCURPInVinculatulinea(curp: string): Promise<LineResu
     "[vinculatulinea] registered response:",
     JSON.stringify(stripCURPs(data), null, 2),
   );
+
+  const lines: string[] = (data.subscription ?? []).map(
+    (sub: { descripcion: string; msisdn: string }) => {
+      // descripcion format: "Número Oxxocel: " — extract brand name
+      const brand = sub.descripcion.replace(/^Número\s+/i, "").replace(/:\s*$/, "").trim();
+      return `${brand}: ${sub.msisdn}`;
+    },
+  );
+
   return {
-    company: "Vinculatulinea (Freedompop/OUI/OXXO CEL/Uber Cel/AhorroCel/Chedraui Móvil/Yobi Telecom)",
-    lines: [],
+    company: "Vinculatulinea",
+    lines,
     isRegistered: true,
     rawApiResponse: data,
   };

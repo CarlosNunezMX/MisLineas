@@ -91,6 +91,7 @@ export function transformApiResponse(
             operadora: posible,
             numero: "Número no confirmado",
             isPossible: true,
+            disclaimer: result.possibleDisclaimer,
           });
         }
       } else if (!hasLines) {
