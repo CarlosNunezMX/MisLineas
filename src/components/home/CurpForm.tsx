@@ -176,6 +176,7 @@ export function CurpForm({
                 <button
                   key={h}
                   type="button"
+                  disabled={loading}
                   onClick={() => setCurp(h)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -183,7 +184,7 @@ export function CurpForm({
                       setCurp(h);
                     }
                   }}
-                  className="text-xs font-mono px-2.5 py-1 bg-zinc-100/80 text-zinc-600 border border-zinc-200 rounded-lg hover:bg-zinc-200 hover:text-zinc-900 transition-colors"
+                  className="text-xs font-mono px-2.5 py-1 bg-zinc-100/80 text-zinc-600 border border-zinc-200 rounded-lg hover:bg-zinc-200 hover:text-zinc-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zinc-100/80 disabled:hover:text-zinc-600"
                 >
                   {h}
                 </button>
