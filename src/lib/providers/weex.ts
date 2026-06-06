@@ -1,53 +1,10 @@
 import type { LineResult } from "@/types";
 
-export async function loookupCURPINWeeex(curp: string): Promise<LineResult> {
-  const validationBody = {
-    documentType: 1,
-    searchData: curp,
-  };
-
-  const validationResponse = await fetch(
-    "https://app.weex.mx/ServiceLayer/Legislacion?ex=getDnActiveLines",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(validationBody),
-    },
-  );
-
-  if (!validationResponse.ok) {
-    console.error(
-      "Failed to validate CURP with Weex:",
-      validationResponse.statusText,
-    );
-
-    return {
-      company: "Weex",
-      lines: [],
-      error: "Failed to validate CURP with Weex",
-    };
-  }
-
-  const validationData = await validationResponse.json();
-
-  if (validationData.obj?.dnActiveByCurpRfc?.length === 0) {
-    return {
-      company: "Weex",
-      lines: [],
-      isRegistered: false,
-    };
-  }
-
-  const lines = validationData.obj.dnActiveByCurpRfc.map(
-    (item: { msisdn: string }) => item.msisdn,
-  );
-
+export async function loookupCURPINWeeex(_curp: string): Promise<LineResult> {
   return {
     company: "Weex",
-    lines,
-    isRegistered: true,
-    rawApiResponse: validationData,
+    lines: [],
+    error:
+      "Weex no está disponible temporalmente debido a múltiples fallos en su servidor.",
   };
 }

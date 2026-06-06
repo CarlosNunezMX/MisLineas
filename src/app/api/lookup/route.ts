@@ -1,13 +1,17 @@
 import type { NextRequest } from "next/server";
 import {
+  lookupCURPINMobig,
+  lookupCURPINYoMobile,
   lookupCURPInABIB,
   lookupCURPInAltanMVNO,
   lookupCURPInATT,
+  lookupCURPInBeneleit,
   lookupCURPInDialo,
   lookupCURPInIENTC,
   lookupCURPInLogisticaACN,
   lookupCURPInMirlo,
   lookupCURPInTelcel,
+  lookupCURPInVinculatulinea,
   loookupCURPINWeeex,
   loookupCURPInVirginMobile,
 } from "@/lib/providers";
@@ -37,6 +41,10 @@ const providers: Array<{
     lookupFunction: lookupCURPInABIB,
   },
   {
+    provider: "Beneleit Móvil",
+    lookupFunction: lookupCURPInBeneleit,
+  },
+  {
     provider: "Dialo",
     lookupFunction: lookupCURPInDialo,
   },
@@ -57,10 +65,10 @@ const providers: Array<{
     provider: "Mirlo",
     lookupFunction: lookupCURPInMirlo,
   },
-  // {
-  //   provider: "MoBig",
-  //   lookupFunction: lookupCURPINMobig,
-  // },
+  {
+    provider: "MoBig",
+    lookupFunction: lookupCURPINMobig,
+  },
   // {
   //   provider: "Nextor Movil",
   //   lookupFunction: lookupCURPINNextorMovil,
@@ -80,9 +88,14 @@ const providers: Array<{
     provider: "Virgin Mobile",
     lookupFunction: loookupCURPInVirginMobile,
   },
+  // {
+  //   provider: "Weex",
+  //   lookupFunction: loookupCURPINWeeex,
+  // },
   {
-    provider: "Weex",
-    lookupFunction: loookupCURPINWeeex,
+    provider:
+      "Vinculatulinea (Freedompop/OUI/OXXO CEL/Uber Cel/AhorroCel/Chedraui Móvil/Yobi Telecom)",
+    lookupFunction: lookupCURPInVinculatulinea,
   },
   // {
   //   provider: "Yo Mobile",
@@ -157,7 +170,9 @@ export async function POST(req: NextRequest) {
           })
           .then((response) => {
             const sanitized = stripCURPs(response);
-            controller.enqueue(encoder.encode(`${JSON.stringify(sanitized)}\n`));
+            controller.enqueue(
+              encoder.encode(`${JSON.stringify(sanitized)}\n`),
+            );
           }),
       );
 

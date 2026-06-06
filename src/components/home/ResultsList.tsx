@@ -117,7 +117,7 @@ export function ResultsList({
             </div>
           )}
 
-          {activeFilter === "all" && unavailableOperators.length > 0 && (
+          {activeFilter === "all" && !searchQuery && unavailableOperators.length > 0 && (
             <div className="border border-orange-200 rounded-2xl overflow-hidden bg-orange-50 shadow-sm mt-3">
               <button
                 type="button"

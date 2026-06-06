@@ -76,7 +76,14 @@ export function ResultsPanel({
     activeFilter === "all"
       ? activeResults.filter((l) => !l.isNotFound)
       : activeResults;
-  const collapsedNotFound = activeFilter === "all" ? notFoundLines : [];
+  const collapsedNotFound =
+    activeFilter === "all"
+      ? searchQuery
+        ? notFoundLines.filter((l) =>
+            l.operadora.toLowerCase().includes(searchQuery.toLowerCase()),
+          )
+        : notFoundLines
+      : [];
 
   return (
     <motion.div
@@ -136,7 +143,7 @@ export function ResultsPanel({
           className="w-full bg-white border border-zinc-200 px-10 py-3 rounded-xl text-sm outline-none transition-all placeholder:text-zinc-400 focus:border-black focus:ring-1 focus:ring-black shadow-sm"
         />
         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-medium text-zinc-400 bg-zinc-100 px-2 py-1 rounded-md">
-          {activeResults.length} resultados
+          {visibleResults.length + collapsedNotFound.length} resultados
         </span>
       </div>
 
@@ -145,7 +152,7 @@ export function ResultsPanel({
         visibleResults={visibleResults}
         collapsedNotFound={collapsedNotFound}
         activeFilter={activeFilter}
-        activeResultsCount={activeResults.length}
+        activeResultsCount={visibleResults.length + collapsedNotFound.length}
         searchQuery={searchQuery}
         onReport={onReport}
       />

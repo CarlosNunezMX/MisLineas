@@ -1,6 +1,7 @@
 export * from "./abib";
 export * from "./altanredes/mvno";
 export * from "./att";
+export * from "./beneleit";
 export * from "./curp";
 export * from "./dialo";
 export * from "./ientc";
@@ -13,5 +14,6 @@ export * from "./sorcel";
 export * from "./talentonet/mvno";
 export * from "./telcel";
 export * from "./virgin-mobile";
+export * from "./vinculatulinea";
 export * from "./weex";
 export * from "./yo-mobile";

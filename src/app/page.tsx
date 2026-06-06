@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { AnimatePresence } from "motion/react";
 import type React from "react";
 import { useState } from "react";
@@ -54,13 +54,11 @@ export default function MisLineas() {
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fafaf9_0%,#f4f4f5_40%,#ffffff_100%)] font-sans text-zinc-900 selection:bg-zinc-900 selection:text-white">
-      <div className="flex items-center justify-center gap-3 border-b border-red-300/60 bg-[linear-gradient(90deg,#dc2626_0%,#b91c1c_100%)] px-4 py-3 text-sm text-white">
-        <AlertCircle className="w-5 h-5 shrink-0" />
+      <div className="flex items-center justify-center gap-3 border-b border-blue-300/60 bg-[linear-gradient(90deg,#1d4ed8_0%,#1e40af_100%)] px-4 py-3 text-sm text-white">
+        <Sparkles className="w-5 h-5 shrink-0" />
         <p className="text-center max-w-4xl font-medium">
-          <strong>Aviso:</strong> Solo Weex puede presentar fallas
-          intermitentes, especialmente en horarios de alta demanda. Los
-          problemas de Telcel ya fueron resueltos. Si tu consulta con Weex
-          falla, intenta nuevamente en unos minutos.
+          <strong>¡Nuevas operadoras!</strong> Ahora puedes consultar líneas de{" "}
+          Beneleit Móvil, AhorroCel, Chedraui Móvil, Freedompop, OXXO CEL, OUI, Uber Cel y Yobi Telecom.
         </p>
       </div>
 
