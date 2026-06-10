@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { Server, Sparkles } from "lucide-react";
 import { AnimatePresence } from "motion/react";
 import type React from "react";
 import { useState } from "react";
@@ -59,6 +59,13 @@ export default function MisLineas() {
         <p className="text-center max-w-4xl font-medium">
           <strong>¡Nuevas operadoras!</strong> Ahora puedes consultar líneas de{" "}
           Beneleit Móvil, AhorroCel, Chedraui Móvil, Freedompop, OXXO CEL, OUI, Uber Cel y Yobi Telecom.
+        </p>
+      </div>
+
+      <div className="flex items-center justify-center gap-3 border-b border-emerald-300/60 bg-[linear-gradient(90deg,#059669_0%,#047857_100%)] px-4 py-3 text-sm text-white">
+        <Server className="w-5 h-5 shrink-0" />
+        <p className="text-center max-w-4xl font-medium">
+          <strong>Migración de servidor completada.</strong> Hemos migrado a un servidor más potente para soportar la demanda actual. Si experimentas algún problema, recarga la página.
         </p>
       </div>
 
