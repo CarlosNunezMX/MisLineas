@@ -7,9 +7,10 @@ export function ArcoSection() {
       <div className="grid md:grid-cols-2 gap-6 items-start">
         <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-6">
           <p className="text-sm text-zinc-600 mb-6 leading-relaxed">
-            De acuerdo con el <strong>INAI</strong>, la protección de datos
-            personales te permite ejercer derechos ARCO ante cualquier
-            operadora. Tienes total soberanía sobre el uso de tu identidad.
+            La Ley Federal de Protección de Datos Personales en Posesión de los
+            Particulares (LFPDPPP) te permite ejercer derechos ARCO ante
+            cualquier operadora. Tienes total soberanía sobre el uso de tu
+            identidad.
           </p>
           <div className="grid grid-cols-2 gap-4">
             {ARCO_RIGHTS.map((a) => (
@@ -36,9 +37,9 @@ export function ArcoSection() {
             </div>
             <p className="text-sm text-zinc-600 leading-relaxed mb-6">
               Este es un problema grave. Alguien podría estar usando tu
-              identidad para cometer delitos o fraudes. Tienes el derecho
-              respaldado por el <strong>INAI</strong> y el <strong>IFT</strong>{" "}
-              de exigir la cancelación inmediata y levantar un reporte formal.
+              identidad para cometer delitos o fraudes. Tienes el derecho,
+              conforme a la LFPDPPP, de exigir la cancelación inmediata y
+              levantar un reporte formal ante la operadora.
             </p>
           </div>
           <div className="space-y-3 mt-auto">
@@ -48,7 +49,7 @@ export function ArcoSection() {
               rel="noopener noreferrer"
               className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors text-sm"
             >
-              <ShieldAlert className="w-4 h-4" /> Entrar al portal del IFT (CRT)
+              <ShieldAlert className="w-4 h-4" /> Entrar al portal del CRT
             </a>
           </div>
         </div>

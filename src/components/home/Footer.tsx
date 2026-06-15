@@ -20,6 +20,13 @@ export function Footer() {
         <span>No afiliado al Gobierno de México</span>
         <span className="hidden md:block text-zinc-300">&bull;</span>
         <a
+          href="/aviso-de-privacidad"
+          className="hover:text-black transition-colors"
+        >
+          Aviso de Privacidad
+        </a>
+        <span className="hidden md:block text-zinc-300">&bull;</span>
+        <a
           href="https://github.com/moraxh/MisLineas"
           className="hover:text-black transition-colors"
           target="_blank"
