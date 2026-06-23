@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, RotateCcw, UserCheck } from "lucide-react";
+import { Download, Loader2, RotateCcw, UserCheck } from "lucide-react";
 import { motion } from "motion/react";
 import { TOTAL_PROVIDERS } from "@/lib/data/content";
 import { getRiskLevel } from "@/lib/lookup";
@@ -14,6 +14,10 @@ interface Props {
   scannedCount: number;
   queryTime: Date | null;
   onNuevaConsulta: () => void;
+  onExportCsv: () => void;
+  onExportJson: () => void;
+  exportEnabled: boolean;
+  exporting: boolean;
 }
 
 export function ResultsHeader({
@@ -23,6 +27,10 @@ export function ResultsHeader({
   scannedCount,
   queryTime,
   onNuevaConsulta,
+  onExportCsv,
+  onExportJson,
+  exportEnabled,
+  exporting,
 }: Props) {
   const detectedCount = results.filter(
     (l) => !l.isNotFound && !l.isError && !l.isUnavailable,
@@ -50,13 +58,31 @@ export function ResultsHeader({
             <span>{curp}</span>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onNuevaConsulta}
-          className="text-sm font-medium text-zinc-500 hover:text-black flex items-center gap-1.5 transition-colors"
-        >
-          <RotateCcw className="w-4 h-4" /> Nueva consulta
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={onExportCsv}
+            disabled={!exportEnabled || exporting}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Download className="w-4 h-4" /> CSV
+          </button>
+          <button
+            type="button"
+            onClick={onExportJson}
+            disabled={!exportEnabled || exporting}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Download className="w-4 h-4" /> JSON
+          </button>
+          <button
+            type="button"
+            onClick={onNuevaConsulta}
+            className="text-sm font-medium text-zinc-500 hover:text-black flex items-center gap-1.5 transition-colors"
+          >
+            <RotateCcw className="w-4 h-4" /> Nueva consulta
+          </button>
+        </div>
       </div>
 
       {loading && (
@@ -91,6 +117,9 @@ export function ResultsHeader({
             <p className="text-base font-bold text-zinc-900">
               {riskLevel.label}
             </p>
+            <p className="mt-1 text-xs text-zinc-600">
+              {riskLevel.description}
+            </p>
           </div>
           <div className={cn("w-3 h-3 rounded-full", riskLevel.color)} />
         </div>
@@ -106,6 +135,12 @@ export function ResultsHeader({
           </p>
         </div>
       </div>
+
+      <p className="mt-4 text-xs leading-relaxed text-zinc-500">
+        El estatus de riesgo es una guía rápida basada en las líneas detectadas
+        durante esta consulta. No confirma fraude por sí solo: sirve para
+        indicar si conviene revisar con más detalle los resultados.
+      </p>
     </div>
   );
 }

@@ -57,7 +57,11 @@ export default function MisLineas() {
       <div className="flex items-center justify-center gap-3 border-b border-amber-300/60 bg-[linear-gradient(90deg,#d97706_0%,#b45309_100%)] px-4 py-3 text-sm text-white">
         <AlertTriangle className="w-5 h-5 shrink-0" />
         <p className="text-center max-w-4xl font-medium">
-          <strong>Aviso Telcel.</strong> A muchos usuarios de Telcel no les aparecen líneas que han registrado, ni siquiera en el portal oficial. Verifícalo directamente en{" "}
+          <strong>Aviso Telcel.</strong> En algunos casos, una línea Telcel
+          puede no aparecer ni aquí ni en el portal oficial, incluso cuando el
+          usuario cree que ya la registró. Esto puede significar que la línea no
+          quedó bien vinculada o que hubo un fallo de Telcel, así que conviene
+          revisarlo con cuidado en{" "}
           <a
             href="https://registro.telcel.com/vinculatulinea/#/"
             target="_blank"

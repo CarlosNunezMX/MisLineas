@@ -21,6 +21,35 @@ export interface DisplayLine {
   isUnavailable?: boolean;
 }
 
+export interface ExportLineRecord {
+  operadora: string;
+  numero: string;
+  estado: "confirmada" | "posible" | "sin_registro" | "error" | "no_disponible";
+  disclaimer?: string;
+}
+
+export interface ExportEvidencePayload {
+  schemaVersion: 1;
+  source: "mislineas";
+  curp: string;
+  generatedAt: string;
+  generatedAtLocal: string;
+  queryTime: string | null;
+  queryTimeLocal: string | null;
+  scannedCount: number;
+  totalResults: number;
+  lines: ExportLineRecord[];
+}
+
+export interface ExportIntegrity {
+  signed: boolean;
+  algorithm: "HMAC-SHA-256";
+  payloadSha256: string;
+  signature: string | null;
+  signedAt: string;
+  keyId: string;
+}
+
 export interface ProviderResult {
   company: string;
   lines: string[];

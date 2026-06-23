@@ -1,4 +1,4 @@
-import { createCipheriv } from "crypto";
+import { createCipheriv } from "node:crypto";
 import { stripCURPs } from "@/lib/sanitize";
 import type { LineResult } from "@/types";
 
@@ -18,18 +18,23 @@ function encryptCURP(curp: string): string {
   const key = Buffer.from(SECRET_KEY.substring(0, 16).padEnd(16, "\0"), "utf8");
   const cipher = createCipheriv("aes-128-ecb", key, null);
   cipher.setAutoPadding(true);
-  const encrypted = Buffer.concat([cipher.update(curp, "utf8"), cipher.final()]);
+  const encrypted = Buffer.concat([
+    cipher.update(curp, "utf8"),
+    cipher.final(),
+  ]);
   return encrypted.toString("base64");
 }
 
 function generateProcessId(): string {
   let id = "";
   for (let i = 0; i < 15; i++) id += Math.floor(Math.random() * 10).toString();
-  return "OMV" + id;
+  return `OMV${id}`;
 }
 
 // Single endpoint covers all VINCULATULINEA_PROVIDERS
-export async function lookupCURPInVinculatulinea(curp: string): Promise<LineResult> {
+export async function lookupCURPInVinculatulinea(
+  curp: string,
+): Promise<LineResult> {
   const processId = generateProcessId();
   const encryptedCURP = encryptCURP(curp);
 
@@ -88,7 +93,10 @@ export async function lookupCURPInVinculatulinea(curp: string): Promise<LineResu
   }
 
   if (data.responseCode === 3) {
-    console.error("[vinculatulinea] External service error:", data.responseMessage);
+    console.error(
+      "[vinculatulinea] External service error:",
+      data.responseMessage,
+    );
     return {
       company: "Vinculatulinea",
       lines: [],
@@ -96,15 +104,23 @@ export async function lookupCURPInVinculatulinea(curp: string): Promise<LineResu
     };
   }
 
-  console.log(
-    "[vinculatulinea] registered response:",
-    JSON.stringify(stripCURPs(data), null, 2),
-  );
+  const BRAND_MAP: Record<string, string> = {
+    oxxocel: "OXXO CEL",
+    freedompop: "Freedompop",
+    oui: "OUI",
+    "uber cel": "Uber Cel",
+    ahorrocel: "AhorroCel",
+    "chedraui móvil": "Chedraui Móvil",
+    "yobi telecom": "Yobi Telecom",
+  };
 
   const lines: string[] = (data.subscription ?? []).map(
     (sub: { descripcion: string; msisdn: string }) => {
-      // descripcion format: "Número Oxxocel: " — extract brand name
-      const brand = sub.descripcion.replace(/^Número\s+/i, "").replace(/:\s*$/, "").trim();
+      const raw = sub.descripcion
+        .replace(/^Número\s+/i, "")
+        .replace(/:\s*$/, "")
+        .trim();
+      const brand = BRAND_MAP[raw.toLowerCase()] ?? raw;
       return `${brand}: ${sub.msisdn}`;
     },
   );

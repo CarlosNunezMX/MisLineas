@@ -6,7 +6,13 @@ import { useState } from "react";
 import { FilterTabs } from "@/components/home/FilterTabs";
 import { ResultsHeader } from "@/components/home/ResultsHeader";
 import { ResultsList } from "@/components/home/ResultsList";
-import type { DisplayLine, FilterTab } from "@/types";
+import {
+  buildCsvExport,
+  buildExportEvidencePayload,
+  buildJsonExport,
+  getExportFilename,
+} from "@/lib/export";
+import type { DisplayLine, ExportIntegrity, FilterTab } from "@/types";
 
 interface Props {
   results: DisplayLine[];
@@ -29,6 +35,8 @@ export function ResultsPanel({
 }: Props) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
+  const [exporting, setExporting] = useState(false);
+  const [exportMessage, setExportMessage] = useState<string | null>(null);
 
   const confirmedLines = results.filter(
     (l) => !l.isPossible && !l.isNotFound && !l.isError && !l.isUnavailable,
@@ -85,6 +93,80 @@ export function ResultsPanel({
         : notFoundLines
       : [];
 
+  const exportEnabled = !loading && !!queryTime;
+
+  const downloadFile = (
+    filename: string,
+    content: string,
+    mimeType: string,
+  ) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const getIntegrity = async (
+    payload: ReturnType<typeof buildExportEvidencePayload>,
+  ): Promise<ExportIntegrity> => {
+    const response = await fetch("/api/export-signature", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error("No se pudo generar la firma del documento.");
+    }
+
+    const integrity = (await response.json()) as ExportIntegrity;
+    return integrity;
+  };
+
+  const handleExport = async (format: "csv" | "json") => {
+    if (!queryTime || exporting) return;
+
+    setExporting(true);
+    setExportMessage(null);
+
+    try {
+      const payload = buildExportEvidencePayload({
+        curp,
+        queryTime,
+        scannedCount,
+        results,
+      });
+      const integrity = await getIntegrity(payload);
+      const content =
+        format === "csv"
+          ? buildCsvExport(payload, integrity)
+          : buildJsonExport(payload, integrity);
+
+      downloadFile(
+        getExportFilename(curp, format),
+        content,
+        format === "csv" ? "text/csv;charset=utf-8" : "application/json",
+      );
+
+      if (!integrity.signed) {
+        setExportMessage(
+          "Archivo exportado sin firma criptografica. Configura EXPORT_SIGNING_SECRET para habilitarla.",
+        );
+      }
+    } catch (error) {
+      setExportMessage(
+        error instanceof Error
+          ? error.message
+          : "No se pudo exportar el archivo.",
+      );
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <motion.div
       key="results"
@@ -99,7 +181,17 @@ export function ResultsPanel({
         scannedCount={scannedCount}
         queryTime={queryTime}
         onNuevaConsulta={onNuevaConsulta}
+        onExportCsv={() => handleExport("csv")}
+        onExportJson={() => handleExport("json")}
+        exportEnabled={exportEnabled}
+        exporting={exporting}
       />
+
+      {exportMessage && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
+          {exportMessage}
+        </div>
+      )}
 
       {!loading &&
         (errorLines.length > 0 ||
