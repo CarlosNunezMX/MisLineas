@@ -31,13 +31,20 @@ function generateProcessId(): string {
   return `OMV${id}`;
 }
 
-// Single endpoint covers all VINCULATULINEA_PROVIDERS
-export async function lookupCURPInVinculatulinea(
-  curp: string,
-): Promise<LineResult> {
-  const processId = generateProcessId();
-  const encryptedCURP = encryptCURP(curp);
+const MAX_ATTEMPTS = 3;
+const RETRY_DELAY_MS = 500;
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+type FetchResult =
+  | { ok: true; data: Record<string, unknown> }
+  | { ok: false; transient: boolean; status?: number };
+
+async function fetchSubscriptions(
+  encryptedCURP: string,
+): Promise<FetchResult> {
   const url =
     "https://vinculatulinea.com/omv-lineas/v1/omv-services/subscriptions-by-curp?pathName=freedompop&apiName=getSubscriptionsbyCURP";
   const auth = Buffer.from("admin:admin123").toString("base64");
@@ -51,7 +58,7 @@ export async function lookupCURPInVinculatulinea(
       Referer: "https://vinculatulinea.com/freedompop/my-lines",
       "X-Client-Data": encryptedCURP,
       "Y-Client-Data": "false",
-      processId,
+      processId: generateProcessId(),
       OPERATION_CONTEXT: "MY_LINES",
     },
   });
@@ -63,21 +70,53 @@ export async function lookupCURPInVinculatulinea(
       `[vinculatulinea] HTTP ${response.status} — body:`,
       JSON.stringify(stripCURPs(data), null, 2),
     );
-    return {
-      company: "Vinculatulinea",
-      lines: [],
-      error: "Failed to validate CURP with Vinculatulinea",
-    };
+    // 403/5xx from this provider are typically a transient upstream hiccup
+    return { ok: false, transient: true, status: response.status };
   }
 
   if (!data) {
     console.error("[vinculatulinea] Empty or invalid JSON response");
+    return { ok: false, transient: false };
+  }
+
+  if (data.responseCode === 3) {
+    console.error(
+      "[vinculatulinea] External service error:",
+      data.responseMessage,
+    );
+    return { ok: false, transient: true };
+  }
+
+  return { ok: true, data };
+}
+
+// Single endpoint covers all VINCULATULINEA_PROVIDERS
+export async function lookupCURPInVinculatulinea(
+  curp: string,
+): Promise<LineResult> {
+  const encryptedCURP = encryptCURP(curp);
+
+  let result = await fetchSubscriptions(encryptedCURP);
+  for (
+    let attempt = 1;
+    !result.ok && result.transient && attempt < MAX_ATTEMPTS;
+    attempt++
+  ) {
+    await sleep(RETRY_DELAY_MS * attempt);
+    result = await fetchSubscriptions(encryptedCURP);
+  }
+
+  if (!result.ok) {
     return {
       company: "Vinculatulinea",
       lines: [],
-      error: "Invalid response from Vinculatulinea",
+      error: result.transient
+        ? "External service error from Vinculatulinea"
+        : "Invalid response from Vinculatulinea",
     };
   }
+
+  const data = result.data;
 
   if (
     data.responseCode === 0 &&
@@ -92,18 +131,6 @@ export async function lookupCURPInVinculatulinea(
     };
   }
 
-  if (data.responseCode === 3) {
-    console.error(
-      "[vinculatulinea] External service error:",
-      data.responseMessage,
-    );
-    return {
-      company: "Vinculatulinea",
-      lines: [],
-      error: "External service error from Vinculatulinea",
-    };
-  }
-
   const BRAND_MAP: Record<string, string> = {
     oxxocel: "OXXO CEL",
     freedompop: "Freedompop",
@@ -114,7 +141,12 @@ export async function lookupCURPInVinculatulinea(
     "yobi telecom": "Yobi Telecom",
   };
 
-  const lines: string[] = (data.subscription ?? []).map(
+  const subscriptions = (data.subscription ?? []) as Array<{
+    descripcion: string;
+    msisdn: string;
+  }>;
+
+  const lines: string[] = subscriptions.map(
     (sub: { descripcion: string; msisdn: string }) => {
       const raw = sub.descripcion
         .replace(/^Número\s+/i, "")
