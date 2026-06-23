@@ -1,22 +1,44 @@
 import { ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 
 interface AccordionItemProps {
+  id?: string;
   title: string;
   children: ReactNode;
   defaultOpen?: boolean;
 }
 
 export function AccordionItem({
+  id,
   title,
   children,
   defaultOpen = false,
 }: AccordionItemProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
+  useEffect(() => {
+    if (!id) return;
+
+    const syncWithHash = () => {
+      if (window.location.hash === `#${id}`) {
+        setIsOpen(true);
+      }
+    };
+
+    syncWithHash();
+    window.addEventListener("hashchange", syncWithHash);
+
+    return () => {
+      window.removeEventListener("hashchange", syncWithHash);
+    };
+  }, [id]);
+
   return (
-    <div className="border border-zinc-200 bg-white rounded-2xl overflow-hidden shadow-sm">
+    <div
+      id={id}
+      className="border border-zinc-200 bg-white rounded-2xl overflow-hidden shadow-sm scroll-mt-24"
+    >
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}

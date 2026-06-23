@@ -133,10 +133,10 @@ export default function MisLineas() {
             <AccordionItem title="¿Por qué usar MisLíneas y cómo funciona?">
               <WhySection />
             </AccordionItem>
-            <AccordionItem title="Seguridad y Privacidad">
+            <AccordionItem id="seguridad" title="Seguridad y Privacidad">
               <SecuritySection />
             </AccordionItem>
-            <AccordionItem title="Derechos ARCO y Denuncias">
+            <AccordionItem id="arco" title="Derechos ARCO y Denuncias">
               <ArcoSection />
             </AccordionItem>
           </div>
