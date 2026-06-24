@@ -1,6 +1,6 @@
 "use client";
 
-import { Github, Menu, ShieldAlert, X } from "lucide-react";
+import { Coffee, Github, Menu, ShieldAlert, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import { useState } from "react";
@@ -47,6 +47,15 @@ export function Navbar() {
               aria-label="Código fuente en GitHub"
             >
               <Github className="w-5 h-5" />
+            </a>
+            <a
+              href="https://ko-fi.com/moraxh"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-sm font-medium text-pink-600 hover:text-pink-700 bg-pink-50 hover:bg-pink-100 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <Coffee className="w-4 h-4" />
+              Donar
             </a>
             <a
               href="https://portal.crt.gob.mx/reporte-fallas-plataforma-registro"
@@ -103,6 +112,16 @@ export function Navbar() {
             >
               Derechos ARCO
             </button>
+            <a
+              href="https://ko-fi.com/moraxh"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setIsMenuOpen(false)}
+              className="bg-pink-50 text-pink-600 w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2"
+            >
+              <Coffee className="w-4 h-4" />
+              Donar
+            </a>
             <a
               href="https://portal.crt.gob.mx/reporte-fallas-plataforma-registro"
               target="_blank"
