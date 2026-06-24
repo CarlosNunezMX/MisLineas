@@ -4,7 +4,7 @@ import type { LineResult } from "@/types";
 
 const SECRET_KEY = "key_t3lcel_prod";
 
-const VINCULATULINEA_PROVIDERS = [
+const FREEDOMPOP_PROVIDERS = [
   "AhorroCel",
   "Chedraui Móvil",
   "Freedompop",
@@ -52,14 +52,25 @@ async function fetchSubscriptions(
   const response = await fetch(url, {
     method: "GET",
     headers: {
-      Authorization: `Basic ${auth}`,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      Referer: "https://vinculatulinea.com/freedompop/my-lines",
-      "X-Client-Data": encryptedCURP,
-      "Y-Client-Data": "false",
-      processId: generateProcessId(),
-      OPERATION_CONTEXT: "MY_LINES",
+      accept: "application/json",
+      "accept-language": "en-US,en;q=0.6",
+      authorization: `Basic ${auth}`,
+      "content-type": "application/json",
+      operation_context: "MY_LINES",
+      priority: "u=1, i",
+      processid: generateProcessId(),
+      referer: "https://vinculatulinea.com/freedompop/my-lines",
+      "sec-ch-ua": '"Chromium";v="149", "Not)A;Brand";v="24"',
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": '"Linux"',
+      "sec-fetch-dest": "empty",
+      "sec-fetch-mode": "cors",
+      "sec-fetch-site": "same-origin",
+      "sec-gpc": "1",
+      "user-agent":
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+      "x-client-data": encryptedCURP,
+      "y-client-data": "false",
     },
   });
 
@@ -67,33 +78,39 @@ async function fetchSubscriptions(
 
   if (!response.ok) {
     console.error(
-      `[vinculatulinea] HTTP ${response.status} — body:`,
+      `[freedompop] HTTP ${response.status} — body:`,
       JSON.stringify(stripCURPs(data), null, 2),
     );
-    // 403/5xx from this provider are typically a transient upstream hiccup
     return { ok: false, transient: true, status: response.status };
   }
 
   if (!data) {
-    console.error("[vinculatulinea] Empty or invalid JSON response");
+    console.error("[freedompop] Empty or invalid JSON response");
     return { ok: false, transient: false };
   }
 
   if (data.responseCode === 3) {
-    console.error(
-      "[vinculatulinea] External service error:",
-      data.responseMessage,
-    );
+    console.error("[freedompop] External service error:", data.responseMessage);
     return { ok: false, transient: true };
   }
 
   return { ok: true, data };
 }
 
-// Single endpoint covers all VINCULATULINEA_PROVIDERS
-export async function lookupCURPInVinculatulinea(
+const BRAND_MAP: Record<string, string> = {
+  oxxocel: "OXXO CEL",
+  freedompop: "Freedompop",
+  oui: "OUI",
+  "uber cel": "Uber Cel",
+  ahorrocel: "AhorroCel",
+  "chedraui móvil": "Chedraui Móvil",
+  "yobi telecom": "Yobi Telecom",
+};
+
+// Single endpoint covers all FREEDOMPOP_PROVIDERS; returns one result per brand
+export async function lookupCURPInFreedompop(
   curp: string,
-): Promise<LineResult> {
+): Promise<LineResult[]> {
   const encryptedCURP = encryptCURP(curp);
 
   let result = await fetchSubscriptions(encryptedCURP);
@@ -107,13 +124,13 @@ export async function lookupCURPInVinculatulinea(
   }
 
   if (!result.ok) {
-    return {
-      company: "Vinculatulinea",
+    return FREEDOMPOP_PROVIDERS.map((company) => ({
+      company,
       lines: [],
       error: result.transient
-        ? "External service error from Vinculatulinea"
-        : "Invalid response from Vinculatulinea",
-    };
+        ? `External service error from ${company}`
+        : `Invalid response from ${company}`,
+    }));
   }
 
   const data = result.data;
@@ -123,44 +140,36 @@ export async function lookupCURPInVinculatulinea(
     Array.isArray(data.subscription) &&
     data.subscription.length === 0
   ) {
-    return {
-      company: "Vinculatulinea",
+    return FREEDOMPOP_PROVIDERS.map((company) => ({
+      company,
       lines: [],
       isRegistered: false,
-      notFoundProviders: VINCULATULINEA_PROVIDERS,
-    };
+    }));
   }
-
-  const BRAND_MAP: Record<string, string> = {
-    oxxocel: "OXXO CEL",
-    freedompop: "Freedompop",
-    oui: "OUI",
-    "uber cel": "Uber Cel",
-    ahorrocel: "AhorroCel",
-    "chedraui móvil": "Chedraui Móvil",
-    "yobi telecom": "Yobi Telecom",
-  };
 
   const subscriptions = (data.subscription ?? []) as Array<{
     descripcion: string;
     msisdn: string;
   }>;
 
-  const lines: string[] = subscriptions.map(
-    (sub: { descripcion: string; msisdn: string }) => {
-      const raw = sub.descripcion
-        .replace(/^Número\s+/i, "")
-        .replace(/:\s*$/, "")
-        .trim();
-      const brand = BRAND_MAP[raw.toLowerCase()] ?? raw;
-      return `${brand}: ${sub.msisdn}`;
-    },
-  );
+  const byBrand = new Map<string, string[]>();
+  for (const sub of subscriptions) {
+    const raw = sub.descripcion
+      .replace(/^Número\s+/i, "")
+      .replace(/:\s*$/, "")
+      .trim();
+    const brand = BRAND_MAP[raw.toLowerCase()] ?? raw;
+    if (!byBrand.has(brand)) byBrand.set(brand, []);
+    byBrand.get(brand)!.push(sub.msisdn);
+  }
 
-  return {
-    company: "Vinculatulinea",
-    lines,
-    isRegistered: true,
-    rawApiResponse: data,
-  };
+  return FREEDOMPOP_PROVIDERS.map((company) => {
+    const lines = byBrand.get(company) ?? [];
+    return {
+      company,
+      lines,
+      isRegistered: lines.length > 0,
+      ...(lines.length === 0 ? {} : { rawApiResponse: data }),
+    };
+  });
 }

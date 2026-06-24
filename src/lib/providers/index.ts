@@ -14,6 +14,6 @@ export * from "./sorcel";
 export * from "./talentonet/mvno";
 export * from "./telcel";
 export * from "./virgin-mobile";
-export * from "./vinculatulinea";
+export * from "./freedompop";
 export * from "./weex";
 export * from "./yo-mobile";

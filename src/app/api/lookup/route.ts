@@ -11,7 +11,7 @@ import {
   lookupCURPInLogisticaACN,
   lookupCURPInMirlo,
   lookupCURPInTelcel,
-  lookupCURPInVinculatulinea,
+  lookupCURPInFreedompop,
   loookupCURPINWeeex,
   loookupCURPInVirginMobile,
 } from "@/lib/providers";
@@ -22,7 +22,7 @@ import type { LineResult } from "@/types";
 
 const providers: Array<{
   provider: string;
-  lookupFunction: (curp: string) => Promise<LineResult>;
+  lookupFunction: (curp: string) => Promise<LineResult | LineResult[]>;
 }> = [
   {
     provider: "AT&T",
@@ -94,8 +94,8 @@ const providers: Array<{
   // },
   {
     provider:
-      "Vinculatulinea (Freedompop/OUI/OXXO CEL/Uber Cel/AhorroCel/Chedraui Móvil/Yobi Telecom)",
-    lookupFunction: lookupCURPInVinculatulinea,
+      "Freedompop",
+    lookupFunction: lookupCURPInFreedompop,
   },
   // {
   //   provider: "Yo Mobile",
@@ -141,17 +141,22 @@ export async function POST(req: NextRequest) {
         p
           .lookupFunction(curp)
           .then(
-            (result) => ({ provider: p.provider, result }),
+            (result) => {
+              const results = Array.isArray(result) ? result : [result];
+              return results.map((r) => ({ provider: p.provider, result: r }));
+            },
             (error) => {
               console.error(`Lookup failed for ${p.provider}:`, error);
-              return {
-                provider: p.provider,
-                result: {
-                  company: p.provider,
-                  lines: [],
-                  error: `Lookup failed: ${error.message}`,
+              return [
+                {
+                  provider: p.provider,
+                  result: {
+                    company: p.provider,
+                    lines: [],
+                    error: `Lookup failed: ${error.message}`,
+                  },
                 },
-              };
+              ];
             },
           )
           .catch((error) => {
@@ -159,20 +164,24 @@ export async function POST(req: NextRequest) {
               `Unexpected error looking up CURP in ${p.provider}:`,
               error,
             );
-            return {
-              provider: p.provider,
-              result: {
-                company: p.provider,
-                lines: [],
-                error: "An unexpected error occurred during lookup",
+            return [
+              {
+                provider: p.provider,
+                result: {
+                  company: p.provider,
+                  lines: [],
+                  error: "An unexpected error occurred during lookup",
+                },
               },
-            };
+            ];
           })
-          .then((response) => {
-            const sanitized = stripCURPs(response);
-            controller.enqueue(
-              encoder.encode(`${JSON.stringify(sanitized)}\n`),
-            );
+          .then((responses) => {
+            for (const response of responses) {
+              const sanitized = stripCURPs(response);
+              controller.enqueue(
+                encoder.encode(`${JSON.stringify(sanitized)}\n`),
+              );
+            }
           }),
       );
 
