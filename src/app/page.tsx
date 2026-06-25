@@ -60,6 +60,12 @@ export default function MisLineas() {
           <strong>Intento de bloqueo resuelto.</strong> AT&amp;T y Freedompop intentaron bloquear el acceso de esta herramienta. Ya lo solucionamos — las consultas funcionan con normalidad.
         </p>
       </div>
+      <div className="flex items-center justify-center gap-3 border-b border-red-400/60 bg-[linear-gradient(90deg,#dc2626_0%,#b91c1c_100%)] px-4 py-3 text-sm text-white">
+        <AlertTriangle className="w-5 h-5 shrink-0" />
+        <p className="text-center max-w-4xl font-medium">
+          <strong>Dialo también.</strong> Al parecer se pusieron de acuerdo — Dialo también está bloqueando las consultas. Estamos trabajando en resolverlo.
+        </p>
+      </div>
       <div className="flex items-center justify-center gap-3 border-b border-amber-300/60 bg-[linear-gradient(90deg,#d97706_0%,#b45309_100%)] px-4 py-3 text-sm text-white">
         <AlertTriangle className="w-5 h-5 shrink-0" />
         <p className="text-center max-w-4xl font-medium">
