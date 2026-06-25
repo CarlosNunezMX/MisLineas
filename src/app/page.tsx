@@ -60,10 +60,10 @@ export default function MisLineas() {
           <strong>Intentos de bloqueo resueltos.</strong> AT&amp;T y Dialo intentaron bloquear esta herramienta — al parecer se pusieron de acuerdo. Ya lo solucionamos.
         </p>
       </div>
-      <div className="flex items-center justify-center gap-3 border-b border-amber-500/60 bg-[linear-gradient(90deg,#d97706_0%,#b45309_100%)] px-4 py-3 text-sm text-white">
+      <div className="flex items-center justify-center gap-3 border-b border-blue-400/60 bg-[linear-gradient(90deg,#2563eb_0%,#1d4ed8_100%)] px-4 py-3 text-sm text-white">
         <AlertTriangle className="w-5 h-5 shrink-0" />
         <p className="text-center max-w-4xl font-medium">
-          <strong>Freedompop intermitente.</strong> Las operadoras de Freedompop (AhorroCel, OXXO CEL, OUI, etc.) pueden fallar ocasionalmente. Estamos viendo qué pedo.
+          <strong>Freedompop intermitente.</strong> Las operadoras de Freedompop (AhorroCel, OXXO CEL, OUI, etc.) pueden fallar ocasionalmente. Estamos investigando.
         </p>
       </div>
       <div className="flex items-center justify-center gap-3 border-b border-amber-300/60 bg-[linear-gradient(90deg,#d97706_0%,#b45309_100%)] px-4 py-3 text-sm text-white">
