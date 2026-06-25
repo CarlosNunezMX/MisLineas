@@ -62,7 +62,7 @@ export function Footer() {
           </a>
         </div>
         <a
-          href="/donar"
+          href="https://ko-fi.com/moraxh"
           className="flex items-center gap-1.5 whitespace-nowrap text-pink-600 bg-pink-50 hover:bg-pink-100 px-3 py-1.5 rounded-full font-medium transition-colors shrink-0"
           target="_blank"
           rel="noopener noreferrer"

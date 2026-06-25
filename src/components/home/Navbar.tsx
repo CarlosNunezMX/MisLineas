@@ -49,7 +49,7 @@ export function Navbar() {
               <Github className="w-5 h-5" />
             </a>
             <a
-              href="/donar"
+              href="https://ko-fi.com/moraxh"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-sm font-medium text-pink-600 hover:text-pink-700 bg-pink-50 hover:bg-pink-100 px-3 py-1.5 rounded-lg transition-colors"
@@ -113,7 +113,7 @@ export function Navbar() {
               Derechos ARCO
             </button>
             <a
-              href="/donar"
+              href="https://ko-fi.com/moraxh"
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setIsMenuOpen(false)}
