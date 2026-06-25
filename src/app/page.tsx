@@ -57,14 +57,10 @@ export default function MisLineas() {
       <div className="flex items-center justify-center gap-3 border-b border-red-400/60 bg-[linear-gradient(90deg,#dc2626_0%,#b91c1c_100%)] px-4 py-3 text-sm text-white">
         <AlertTriangle className="w-5 h-5 shrink-0" />
         <p className="text-center max-w-4xl font-medium">
-          <strong>Fallo en curso.</strong> Estamos investigando un problema con
-          el proveedor Freedompop que afecta a:{" "}
-          <strong>
-            AhorroCel, Chedraui Móvil, Freedompop, OXXO CEL, OUI, Uber Cel y
-            Yobi Telecom
-          </strong>
-          . Los resultados de estas operadoras pueden ser incorrectos o no
-          aparecer.
+          <strong>AT&amp;T nos bloqueó.</strong> AT&amp;T bloqueó específicamente
+          el acceso de esta herramienta a su portal de consulta. Estamos
+          trabajando para resolverlo. Por el momento, las líneas AT&amp;T no
+          podrán consultarse aquí.
         </p>
       </div>
       <div className="flex items-center justify-center gap-3 border-b border-amber-300/60 bg-[linear-gradient(90deg,#d97706_0%,#b45309_100%)] px-4 py-3 text-sm text-white">
