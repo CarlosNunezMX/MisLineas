@@ -6,19 +6,7 @@ import Link from "next/link";
 
 const KOFI_URL = "https://ko-fi.com/moraxh";
 
-const LAUNCH_DATE = new Date("2025-04-30");
-const INITIAL_CONSULTATIONS = 60_000;
-const DAILY_RATE = 8_000;
-
-function getEstimatedConsultations(): number {
-  const daysSinceLaunch = Math.floor(
-    (Date.now() - LAUNCH_DATE.getTime()) / (1000 * 60 * 60 * 24),
-  );
-  return INITIAL_CONSULTATIONS + daysSinceLaunch * DAILY_RATE;
-}
-
 export default function DonarPage() {
-  const consultations = getEstimatedConsultations();
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fafaf9_0%,#f4f4f5_40%,#ffffff_100%)] font-sans text-zinc-900">
@@ -55,15 +43,13 @@ export default function DonarPage() {
               <Users className="w-4 h-4 text-zinc-400" />
               <span className="text-sm font-medium text-zinc-700">
                 Más de{" "}
-                <span className="font-bold text-zinc-950">
-                  {consultations.toLocaleString("es-MX")}
-                </span>{" "}
+                <span className="font-bold text-zinc-950">60,000</span>{" "}
                 consultas realizadas
               </span>
             </div>
             <p className="text-xs text-zinc-400 text-left">
-              ~8,000 consultas por día. Cada consulta hace múltiples llamadas
-              en tiempo real a los portales de las operadoras.
+              Cada consulta hace múltiples llamadas en tiempo real a los
+              portales de las operadoras.
             </p>
           </div>
 
