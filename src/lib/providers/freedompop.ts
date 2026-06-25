@@ -1,6 +1,21 @@
 import { createCipheriv } from "node:crypto";
+import { ProxyAgent, fetch as undiciFetch } from "undici";
 import { stripCURPs } from "@/lib/sanitize";
 import type { LineResult } from "@/types";
+
+function getProxyFetch(): typeof undiciFetch {
+  const raw = process.env.FREEDOMPOP_PROXIES ?? process.env.ATT_PROXIES;
+  if (!raw) return undiciFetch;
+
+  const proxies = raw.split(",").map((p) => p.trim()).filter(Boolean);
+  if (proxies.length === 0) return undiciFetch;
+
+  const entry = proxies[Math.floor(Math.random() * proxies.length)];
+  const [host, port, user, pass] = entry.split(":");
+  const dispatcher = new ProxyAgent(`http://${user}:${pass}@${host}:${port}`);
+
+  return (url, init) => undiciFetch(url, { ...init, dispatcher });
+}
 
 const SECRET_KEY = "key_t3lcel_prod";
 
@@ -48,8 +63,9 @@ async function fetchSubscriptions(
   const url =
     "https://vinculatulinea.com/omv-lineas/v1/omv-services/subscriptions-by-curp?pathName=freedompop&apiName=getSubscriptionsbyCURP";
   const auth = Buffer.from("admin:admin123").toString("base64");
+  const proxiedFetch = getProxyFetch();
 
-  const response = await fetch(url, {
+  const response = await proxiedFetch(url, {
     method: "GET",
     headers: {
       accept: "application/json",
@@ -74,7 +90,7 @@ async function fetchSubscriptions(
     },
   });
 
-  const data = await response.json().catch(() => null);
+  const data = await response.json().catch(() => null) as Record<string, unknown> | null;
 
   if (!response.ok) {
     console.error(
