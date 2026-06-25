@@ -1,4 +1,17 @@
+import { HttpsProxyAgent } from "https-proxy-agent";
 import type { LineResult } from "@/types";
+
+function getProxyAgent(): HttpsProxyAgent<string> | undefined {
+  const raw = process.env.ATT_PROXIES;
+  if (!raw) return undefined;
+
+  const proxies = raw.split(",").map((p) => p.trim()).filter(Boolean);
+  if (proxies.length === 0) return undefined;
+
+  const entry = proxies[Math.floor(Math.random() * proxies.length)];
+  const [host, port, user, pass] = entry.split(":");
+  return new HttpsProxyAgent(`http://${user}:${pass}@${host}:${port}`);
+}
 
 export async function lookupCURPInATT(curp: string): Promise<LineResult> {
   // Generate a UUIDv4 for the request
@@ -13,15 +26,23 @@ export async function lookupCURPInATT(curp: string): Promise<LineResult> {
     },
   };
 
+  const BASE_HEADERS = {
+    "Content-Type": "application/json",
+    "origin": "https://att.com.mx",
+    "referer": "https://att.com.mx/controlpersonal/",
+  };
+
+  const agent = getProxyAgent();
+
   // Init the session
   const sessionResponse = await fetch(
     "https://att.com.mx/controlpersonal/api/session/initlines",
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: BASE_HEADERS,
       body: JSON.stringify(sessionBody),
+      // @ts-expect-error Node fetch accepts agent
+      agent,
     },
   );
 
@@ -53,6 +74,11 @@ export async function lookupCURPInATT(curp: string): Promise<LineResult> {
     };
   }
 
+  const cookies = sessionResponse.headers
+    .getSetCookie()
+    .map((c) => c.split(";")[0])
+    .join("; ");
+
   const validationBody = {
     operation: "validateCustomer",
     request: {
@@ -68,10 +94,10 @@ export async function lookupCURPInATT(curp: string): Promise<LineResult> {
     "https://att.com.mx/controlpersonal/api/validatecustomer",
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { ...BASE_HEADERS, cookie: cookies },
       body: JSON.stringify(validationBody),
+      // @ts-expect-error Node fetch accepts agent
+      agent,
     },
   );
 
