@@ -1,16 +1,18 @@
-import { HttpsProxyAgent } from "https-proxy-agent";
+import { ProxyAgent, fetch as undiciFetch } from "undici";
 import type { LineResult } from "@/types";
 
-function getProxyAgent(): HttpsProxyAgent<string> | undefined {
+function getProxyFetch(): typeof undiciFetch {
   const raw = process.env.ATT_PROXIES;
-  if (!raw) return undefined;
+  if (!raw) return undiciFetch;
 
   const proxies = raw.split(",").map((p) => p.trim()).filter(Boolean);
-  if (proxies.length === 0) return undefined;
+  if (proxies.length === 0) return undiciFetch;
 
   const entry = proxies[Math.floor(Math.random() * proxies.length)];
   const [host, port, user, pass] = entry.split(":");
-  return new HttpsProxyAgent(`http://${user}:${pass}@${host}:${port}`);
+  const dispatcher = new ProxyAgent(`http://${user}:${pass}@${host}:${port}`);
+
+  return (url, init) => undiciFetch(url, { ...init, dispatcher });
 }
 
 export async function lookupCURPInATT(curp: string): Promise<LineResult> {
@@ -32,17 +34,15 @@ export async function lookupCURPInATT(curp: string): Promise<LineResult> {
     "referer": "https://att.com.mx/controlpersonal/",
   };
 
-  const agent = getProxyAgent();
+  const proxiedFetch = getProxyFetch();
 
   // Init the session
-  const sessionResponse = await fetch(
+  const sessionResponse = await proxiedFetch(
     "https://att.com.mx/controlpersonal/api/session/initlines",
     {
       method: "POST",
       headers: BASE_HEADERS,
       body: JSON.stringify(sessionBody),
-      // @ts-expect-error Node fetch accepts agent
-      agent,
     },
   );
 
@@ -59,7 +59,7 @@ export async function lookupCURPInATT(curp: string): Promise<LineResult> {
     };
   }
 
-  const sessionData = await sessionResponse.json();
+  const sessionData = await sessionResponse.json() as { status: string };
 
   if (sessionData.status !== "SUCCESS") {
     console.error(
@@ -76,7 +76,7 @@ export async function lookupCURPInATT(curp: string): Promise<LineResult> {
 
   const cookies = sessionResponse.headers
     .getSetCookie()
-    .map((c) => c.split(";")[0])
+    .map((c: string) => c.split(";")[0])
     .join("; ");
 
   const validationBody = {
@@ -90,14 +90,12 @@ export async function lookupCURPInATT(curp: string): Promise<LineResult> {
     },
   };
 
-  const validationResponse = await fetch(
+  const validationResponse = await proxiedFetch(
     "https://att.com.mx/controlpersonal/api/validatecustomer",
     {
       method: "POST",
       headers: { ...BASE_HEADERS, cookie: cookies },
       body: JSON.stringify(validationBody),
-      // @ts-expect-error Node fetch accepts agent
-      agent,
     },
   );
 
@@ -114,7 +112,7 @@ export async function lookupCURPInATT(curp: string): Promise<LineResult> {
     };
   }
 
-  const validationData = await validationResponse.json();
+  const validationData = await validationResponse.json() as { status: string; data: { resultCode: string; countLines: number; customerInfo?: { associatedLines?: { phoneNumber?: string }[] } } };
 
   const isSuccess =
     validationData.status === "COMPLETED" ||
