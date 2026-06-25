@@ -6,7 +6,7 @@ import Link from "next/link";
 
 const KOFI_URL = "https://ko-fi.com/moraxh";
 
-const LAUNCH_DATE = new Date("2025-01-01");
+const LAUNCH_DATE = new Date("2025-04-30");
 const INITIAL_CONSULTATIONS = 60_000;
 const DAILY_RATE = 8_000;
 
