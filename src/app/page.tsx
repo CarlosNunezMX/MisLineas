@@ -57,7 +57,7 @@ export default function MisLineas() {
       <div className="flex items-center justify-center gap-3 border-b border-green-400/60 bg-[linear-gradient(90deg,#16a34a_0%,#15803d_100%)] px-4 py-3 text-sm text-white">
         <ShieldCheck className="w-5 h-5 shrink-0" />
         <p className="text-center max-w-4xl font-medium">
-          <strong>Intentos de bloqueo resueltos.</strong> AT&amp;T, Freedompop y Dialo intentaron bloquear esta herramienta — al parecer se pusieron de acuerdo. Ya lo solucionamos.
+          <strong>Intentos de bloqueo resueltos.</strong> AT&amp;T y Dialo intentaron bloquear esta herramienta — al parecer se pusieron de acuerdo. Ya lo solucionamos.
         </p>
       </div>
       <div className="flex items-center justify-center gap-3 border-b border-amber-500/60 bg-[linear-gradient(90deg,#d97706_0%,#b45309_100%)] px-4 py-3 text-sm text-white">
