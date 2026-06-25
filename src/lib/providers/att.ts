@@ -1,7 +1,7 @@
 import { ProxyAgent, fetch as undiciFetch } from "undici";
 import type { LineResult } from "@/types";
 
-function getProxyFetch(): typeof undiciFetch {
+function getProxiedFetch(): typeof undiciFetch {
   const raw = process.env.ATT_PROXIES;
   if (!raw) return undiciFetch;
 
@@ -15,18 +15,11 @@ function getProxyFetch(): typeof undiciFetch {
   return (url, init) => undiciFetch(url, { ...init, dispatcher });
 }
 
-export async function lookupCURPInATT(curp: string): Promise<LineResult> {
-  // Generate a UUIDv4 for the request
-  const uuid = crypto.randomUUID();
+const MAX_ATTEMPTS = 3;
 
-  const sessionBody = {
-    operation: "sessionInitLines",
-    request: {
-      uuid: uuid,
-      timestamp: new Date().toISOString(),
-      msisdn: null,
-    },
-  };
+async function attempt(curp: string): Promise<LineResult | null> {
+  const uuid = crypto.randomUUID();
+  const proxiedFetch = getProxiedFetch();
 
   const BASE_HEADERS = {
     "Content-Type": "application/json",
@@ -34,85 +27,56 @@ export async function lookupCURPInATT(curp: string): Promise<LineResult> {
     "referer": "https://att.com.mx/controlpersonal/",
   };
 
-  const proxiedFetch = getProxyFetch();
-
-  // Init the session
   const sessionResponse = await proxiedFetch(
     "https://att.com.mx/controlpersonal/api/session/initlines",
     {
       method: "POST",
       headers: BASE_HEADERS,
-      body: JSON.stringify(sessionBody),
+      body: JSON.stringify({
+        operation: "sessionInitLines",
+        request: { uuid, timestamp: new Date().toISOString(), msisdn: null },
+      }),
     },
   );
 
-  if (!sessionResponse.ok) {
-    console.error(
-      "Failed to initialize session with AT&T:",
-      sessionResponse.statusText,
-    );
-
-    return {
-      company: "AT&T",
-      lines: [],
-      error: "Failed to initialize session with AT&T",
-    };
-  }
+  if (!sessionResponse.ok) return null;
 
   const sessionData = await sessionResponse.json() as { status: string };
-
-  if (sessionData.status !== "SUCCESS") {
-    console.error(
-      "AT&T session initialization returned non-success status:",
-      sessionData,
-    );
-
-    return {
-      company: "AT&T",
-      lines: [],
-      error: "AT&T session initialization failed",
-    };
-  }
+  if (sessionData.status !== "SUCCESS") return null;
 
   const cookies = sessionResponse.headers
     .getSetCookie()
     .map((c: string) => c.split(";")[0])
     .join("; ");
 
-  const validationBody = {
-    operation: "validateCustomer",
-    request: {
-      uuid: uuid,
-      timestamp: new Date().toISOString(),
-      idDoc: "DOC01",
-      identificationId: curp,
-      sourceSystem: "SS01",
-    },
-  };
-
   const validationResponse = await proxiedFetch(
     "https://att.com.mx/controlpersonal/api/validatecustomer",
     {
       method: "POST",
       headers: { ...BASE_HEADERS, cookie: cookies },
-      body: JSON.stringify(validationBody),
+      body: JSON.stringify({
+        operation: "validateCustomer",
+        request: {
+          uuid,
+          timestamp: new Date().toISOString(),
+          idDoc: "DOC01",
+          identificationId: curp,
+          sourceSystem: "SS01",
+        },
+      }),
     },
   );
 
-  if (!validationResponse.ok) {
-    console.error(
-      "Failed to validate customer with AT&T:",
-      validationResponse.statusText,
-    );
+  if (!validationResponse.ok) return null;
 
-    return {
-      company: "AT&T",
-      lines: [],
-      error: "Failed to validate customer with AT&T",
+  const validationData = await validationResponse.json() as {
+    status: string;
+    data: {
+      resultCode: string;
+      countLines: number;
+      customerInfo?: { associatedLines?: { phoneNumber?: string }[] };
     };
-  }
-
-  const validationData = await validationResponse.json() as { status: string; data: { resultCode: string; countLines: number; customerInfo?: { associatedLines?: { phoneNumber?: string }[] } } };
+  };
 
   const isSuccess =
     validationData.status === "COMPLETED" ||
@@ -124,12 +88,7 @@ export async function lookupCURPInATT(curp: string): Promise<LineResult> {
       "AT&T customer validation returned non-completed status:",
       JSON.stringify(validationData, null, 2),
     );
-
-    return {
-      company: "AT&T",
-      lines: [],
-      error: "AT&T customer validation failed",
-    };
+    return null;
   }
 
   const data = validationData.data;
@@ -141,17 +100,21 @@ export async function lookupCURPInATT(curp: string): Promise<LineResult> {
         .filter((p: string | undefined): p is string => Boolean(p))
         .map((p: string) => `******${p.slice(-4)}`) ?? [];
 
-    return {
-      company: "AT&T",
-      lines,
-      isRegistered: true,
-      rawApiResponse: validationData,
-    };
+    return { company: "AT&T", lines, isRegistered: true, rawApiResponse: validationData };
   }
 
-  return {
-    company: "AT&T",
-    lines: [],
-    isRegistered: false,
-  };
+  return { company: "AT&T", lines: [], isRegistered: false };
+}
+
+export async function lookupCURPInATT(curp: string): Promise<LineResult> {
+  for (let i = 0; i < MAX_ATTEMPTS; i++) {
+    const result = await attempt(curp).catch((err) => {
+      console.error(`AT&T attempt ${i + 1} threw:`, err);
+      return null;
+    });
+    if (result !== null) return result;
+    console.error(`AT&T attempt ${i + 1} failed, retrying with different proxy...`);
+  }
+
+  return { company: "AT&T", lines: [], error: "Failed to validate customer with AT&T" };
 }
