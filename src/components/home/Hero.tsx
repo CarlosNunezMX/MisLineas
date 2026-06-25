@@ -1,7 +1,29 @@
 "use client";
 
 import { Github, Search } from "lucide-react";
-import { motion } from "motion/react";
+import { motion, useInView, useMotionValue, useSpring } from "motion/react";
+import { useEffect, useRef } from "react";
+
+function AnimatedCount({ target }: { target: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true });
+  const raw = useMotionValue(0);
+  const smoothed = useSpring(raw, { stiffness: 60, damping: 20 });
+
+  useEffect(() => {
+    if (inView) raw.set(target);
+  }, [inView, raw, target]);
+
+  useEffect(() => {
+    return smoothed.on("change", (v) => {
+      if (ref.current) {
+        ref.current.textContent = "+" + Math.round(v).toLocaleString("es-MX");
+      }
+    });
+  }, [smoothed]);
+
+  return <span ref={ref}>+0</span>;
+}
 
 export function Hero() {
   return (
@@ -35,6 +57,14 @@ export function Hero() {
         <h1 className="mx-auto max-w-3xl text-4xl font-bold leading-tight tracking-tight text-zinc-950 sm:text-5xl">
           Consulta las líneas registradas a tu nombre en segundos.
         </h1>
+        <motion.p
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mx-auto max-w-2xl text-sm font-semibold tracking-wide text-zinc-400 uppercase"
+        >
+          <AnimatedCount target={50000} /> consultas realizadas
+        </motion.p>
         <p className="mx-auto max-w-2xl text-base leading-7 text-zinc-600 sm:text-lg">
           Ingresa tu CURP y revisa si hay números vinculados contigo, sin andar
           saltando entre decenas de portales.
