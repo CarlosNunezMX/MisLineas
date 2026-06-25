@@ -1,6 +1,6 @@
 "use client";
 
-import { Coffee, HeartHandshake, Server, Shield, Users } from "lucide-react";
+import { ArrowLeft, Coffee, HeartHandshake, Server, Shield, Users } from "lucide-react";
 import { motion } from "motion/react";
 import Link from "next/link";
 
@@ -13,9 +13,9 @@ export default function DonarPage() {
       <div className="mx-auto flex min-h-screen max-w-xl flex-col px-4 py-12 sm:px-6">
         <Link
           href="/"
-          className="text-sm text-zinc-500 hover:text-zinc-900 transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 transition-colors"
         >
-          ← Volver al inicio
+          <ArrowLeft className="w-4 h-4" /> Volver al inicio
         </Link>
 
         <motion.div
@@ -34,7 +34,7 @@ export default function DonarPage() {
             <p className="max-w-md text-sm leading-7 text-zinc-600 sm:text-base">
               MisLíneas es un proyecto ciudadano independiente, sin anuncios y
               sin fines de lucro. Consulta en tiempo real si tu CURP está
-              registrada en alguna operadora — completamente gratis.
+              registrada en alguna operadora, completamente gratis.
             </p>
           </div>
 
