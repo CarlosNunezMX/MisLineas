@@ -14,6 +14,7 @@ import {
   lookupCURPInFreedompop,
   loookupCURPINWeeex,
   loookupCURPInVirginMobile,
+  lookupCURPInMegamovil,
 } from "@/lib/providers";
 import { validateCURP } from "@/lib/providers/curp";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -56,11 +57,10 @@ const providers: Array<{
     provider: "Logistica ACN (FedeGo!, Flash Mobile, Dua)",
     lookupFunction: lookupCURPInLogisticaACN,
   },
-  // {
-  //   provider: "Mega Móvil",
-  //   lookupFunction: lookupCURPInMegamovil,
-  //   // Disabled: WAF blocks server IP (Attack ID: 20000018)
-  // },
+  {
+    provider: "Mega Móvil",
+    lookupFunction: lookupCURPInMegamovil,
+  },
   {
     provider: "Mirlo",
     lookupFunction: lookupCURPInMirlo,
@@ -93,8 +93,7 @@ const providers: Array<{
   //   lookupFunction: loookupCURPINWeeex,
   // },
   {
-    provider:
-      "Freedompop",
+    provider: "Freedompop",
     lookupFunction: lookupCURPInFreedompop,
   },
   // {
